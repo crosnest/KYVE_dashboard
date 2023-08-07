@@ -4,7 +4,11 @@
       width="30%"
     >
       <template v-slot:activator="{ props }">
-        <v-btn style="margin-right: 0.5em;margin-left: 0.5em;" prepend-icon="mdi-reload" variant="tonal"
+        <v-btn prepend-icon="mdi-reload"
+          variant="tonal"
+          density="default"
+          size="large"
+          block rounded="lg"
           v-bind="props">
           Delegate
         </v-btn>

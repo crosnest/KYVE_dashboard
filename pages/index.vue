@@ -6,7 +6,7 @@
             <v-col class="col-12 col-md-9 q-ml-lg-lg">
               <v-row class="row items-center">
                 <v-avatar style="align-: center;" image="https://s3.amazonaws.com/keybase_processed_uploads/4e8a6ee78ed698828e6c2baec569d305_360_360.jpg" size="200"/>
-                <v-col cols="auto" md="4">
+                <v-col class="col-6 md-4">
                   <v-skeleton-loader
                     :loading="stakerPending"
                     type="list-item-two-line"
@@ -19,10 +19,17 @@
                   style="margin-top: 1em;margin-bottom: 1em;"
                   :thickness="7"
                   />
-
-                  <dialogDelegate />
-                  <dialogEnableRestake v-if="appStore.staker_my_deleg != '0'"/>
-                  <dialogUndelegate v-if="appStore.staker_my_deleg != '0'"/>
+                  <v-row>
+                    <v-col class="col-2 items-center">
+                      <dialogDelegate />
+                    </v-col>
+                    <v-col class="col-2 items-center">
+                      <dialogEnableRestake v-if="appStore.staker_my_deleg != '0'"/>
+                    </v-col>
+                    <v-col class="col-2 items-center">
+                      <dialogUndelegate v-if="appStore.staker_my_deleg != '0'"/>
+                    </v-col>
+                    </v-row>
                 </v-col>
                 <v-col class="col-6">
                   <!-- <v-row>
