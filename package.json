@@ -1,0 +1,27 @@
+{
+  "name": "nuxt-app",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "devDependencies": {
+    "@nuxt/devtools": "latest",
+    "@types/node": "^18.17.1",
+    "buffer": "^6.0.3",
+    "nuxt": "^3.6.5",
+    "vite-plugin-node-polyfills": "^0.9.0"
+  },
+  "dependencies": {
+    "@cosmjs/stargate": "^0.31.0",
+    "@kyvejs/sdk": "latest",
+    "@mdi/font": "^7.2.96",
+    "@nuxtjs/device": "^3.1.0",
+    "@pinia/nuxt": "^0.4.11",
+    "moment": "^2.29.4",
+    "vuetify": "^3.3.11"
+  }
+}
