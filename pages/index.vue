@@ -39,12 +39,12 @@
                   </v-row> -->
                   <v-row>
                     <v-col class="col-6 row items-center">
-                      <v-icon icon="mdi-web"></v-icon> <strong>Website:</strong> {{appStore.staker_metadata?.website}}
+                      <v-icon icon="mdi-web"></v-icon> <strong>Website:</strong> <a :href="appStore.staker_metadata?.website" target="_blank" rel="noopener noreferrer" >{{appStore.staker_metadata?.website}}</a>
                     </v-col>
                   </v-row>
                   <v-row>
                     <v-col class="col-6 row items-center">
-                      <v-icon icon="mdi-phone"></v-icon> <strong>Security Contact:</strong> {{appStore.staker_metadata?.security_contact}}
+                      <v-icon icon="mdi-phone"></v-icon> <strong>Security Contact:</strong> <a :href="mailtoLink">{{appStore.staker_metadata?.security_contact}}</a>
                     </v-col>
                   </v-row>
                   <v-row class="row">
@@ -93,6 +93,7 @@
 
 <script>
 import { useAppStore } from '@/store/app'
+import { server } from 'process'
 import { VSkeletonLoader } from 'vuetify/labs/VSkeletonLoader'
 
 import cosmosConfig from '~/chain.config'
@@ -104,22 +105,23 @@ export default {
   },
   setup() {
     const appStore = useAppStore()
-
-    console.log(import.meta.env)
-    appStore.chainId = import.meta.env['VITE_CHAIN_ID']
-    appStore.stakerAddress = import.meta.env['VITE_STAKER_ADDRESS']
-
-    const stakerInfo = computed(() => cosmosConfig[appStore.chainSelected].apiURL + '/kyve/query/v1beta1/staker/'+ appStore.stakerAddress)
+    const stakerInfo = computed(() => {
+      return appStore.sdk.config.rest + '/kyve/query/v1beta1/staker/'+ appStore.stakerAddress
+    })
     const { data: stakerData, pending: stakerPending, error: stakerError, refresh: stakerRefresh } = useFetch(stakerInfo, {
           onResponse({request, response, options}) {
             const appStore = useAppStore()
             console.log("staker = ", response._data)
             appStore.staker = response._data.staker
           },
-          watch: [stakerInfo]
+          watch: [stakerInfo],
+          server: false
         })
 
-    const delegationInfo = computed(() => cosmosConfig[appStore.chainSelected].apiURL + '/kyve/query/v1beta1/delegator/' + appStore.stakerAddress + '/' + appStore.walletAddress)
+    const delegationInfo = computed(() => {
+      if (appStore.islogged) {return appStore.sdk.config.rest + '/kyve/query/v1beta1/delegator/' + appStore.stakerAddress + '/' + appStore.walletAddress}
+      else {return ''}
+    })
     const { data: delegationData, pending: delegationPending, error: delegationError, refresh: delegationRefresh } = useFetch(delegationInfo, {
           onResponse({request, response, options}) {
             const appStore = useAppStore()
@@ -140,7 +142,9 @@ export default {
           lazy: true,
           server: false
         })
-    return { appStore, stakerPending, delegationPending}
+      
+    const mailtoLink = computed(() => `mailto:${appStore.staker_metadata?.security_contact}`)
+    return { appStore, stakerPending, delegationPending, mailtoLink}
   },
   methods: {
   }

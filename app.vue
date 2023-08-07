@@ -90,6 +90,9 @@ export default {
   name: 'DefaultLayout',
   setup() {
     const appStore = useAppStore()
+    appStore.chainId = import.meta.env['VITE_CHAIN_ID']
+    appStore.stakerAddress = import.meta.env['VITE_STAKER_ADDRESS']
+    appStore.init_store()
     const { isMobile } = useDevice();
     appStore.isMobile = isMobile
     return { appStore }

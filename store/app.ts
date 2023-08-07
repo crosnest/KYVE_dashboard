@@ -1,6 +1,6 @@
 import { defineStore, acceptHMRUpdate} from 'pinia'
 
-import { calculateFee, GasPrice } from "@cosmjs/stargate";
+import { calculateFee, GasPrice } from "@kyvejs/sdk/node_modules/@cosmjs/stargate";
 import { MyKyveSDK } from "~/signer_util/MyKyveSDK"
 import { KyveWebClient } from "@kyvejs/sdk"
 
@@ -58,22 +58,22 @@ export const useAppStore = defineStore('appStore', {
         },
         staker_total_deleg(): string {
             if (this.staker?.total_delegation === undefined) return ''
-            return Number(Number(this.staker.total_delegation)/10**cosmosConfig[this.chainSelected].coinLookup.denomExponent).toLocaleString()
+            return Number(Number(this.staker.total_delegation)/10**this.sdk.config.coinDecimals).toLocaleString()
         },
         staker_self_deleg():string {
             if (this.staker?.self_delegation === undefined) return ''
-            return Number(Number(this.staker.self_delegation)/10**cosmosConfig[this.chainSelected].coinLookup.denomExponent).toLocaleString()
+            return Number(Number(this.staker.self_delegation)/10**this.sdk.config.coinDecimals).toLocaleString()
         },
         staker_deleg_apy():string {
             return '???'
         },
         staker_my_deleg():string {
           if (this.delegatorInfo?.delegation_amount === undefined) return '0'
-          return Number(Number(this.delegatorInfo.delegation_amount)/10**cosmosConfig[this.chainSelected].coinLookup.denomExponent).toLocaleString()
+          return Number(Number(this.delegatorInfo.delegation_amount)/10**this.sdk.config.coinDecimals).toLocaleString()
         },
         staker_my_rewards():string {
           if (this.delegatorInfo?.current_reward === undefined) return '0'
-          return Number(Number(this.delegatorInfo.current_reward)/10**cosmosConfig[this.chainSelected].coinLookup.denomExponent).toLocaleString()
+          return Number(Number(this.delegatorInfo.current_reward)/10**this.sdk.config.coinDecimals).toLocaleString()
         },
         menu_items():any {
             const items = [{
@@ -92,22 +92,26 @@ export const useAppStore = defineStore('appStore', {
         async disconnect() {
 
         },
+        async init_store() {
+          const index = cosmosConfig.findIndex((chain) => chain.chainId === this.chainId);
+          this.chainSelected = index
+          this.sdk = new MyKyveSDK(this.chainId, {
+              rpc: cosmosConfig[index].rpcURL,
+              rest: cosmosConfig[index].apiURL,
+              coinDenom: cosmosConfig[index].coinLookup.chainDenom,
+              coinDecimals: cosmosConfig[index].coinLookup.denomExponent,
+              gasPrice: 0.02,
+            })
+        },
         async keplrConnect() {
-            this.sdk = new MyKyveSDK(this.chainId, {
-                rpc: cosmosConfig[0].rpcURL,
-                rest: cosmosConfig[0].apiURL,
-                coinDenom: cosmosConfig[0].coinLookup.chainDenom,
-                coinDecimals: cosmosConfig[0].coinLookup.denomExponent,
-                gasPrice: 0.02,
-              }),
-            this.client = await this.sdk.fromKeplr();
-            this.walletAddress = this.client.account.address
-            this.walletName = this.client.getWalletName()
-            this.logged = true
+          this.client = await this.sdk.fromKeplr();
+          this.walletAddress = this.client.account.address
+          this.walletName = this.client.getWalletName()
+          this.logged = true
         },
         async delegate(amount:number, memo:string) {
             console.log("KeplrStore Delegate ", amount, "with memo ", memo)
-            const ukyveAmount = amount * 10**cosmosConfig[this.chainSelected].coinLookup.denomExponent
+            const ukyveAmount = amount * 10**this.sdk.config.coinDecimals
             let delegateReturnMsg = ''
 
             console.log("client = ", this.client)
@@ -138,10 +142,7 @@ export const useAppStore = defineStore('appStore', {
             );
             const usedFee = calculateFee(
                 Math.round(gasEstimation * 1.4),
-                GasPrice.fromString(
-                    0.025 +
-                    cosmosConfig[this.chainSelected].coinLookup.chainDenom
-                )
+                GasPrice.fromString( 0.025 + this.sdk.config.coinDenom )
             );
             try {
                 const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [delegate], fee, memo)  
@@ -228,7 +229,7 @@ export const useAppStore = defineStore('appStore', {
         },
         async undelegate(amount:number, memo:string) {
             console.log("KeplrStore Undelegate ", amount, "with memo ", memo)
-            const ukyveAmount = amount * 10**cosmosConfig[this.chainSelected].coinLookup.denomExponent
+            const ukyveAmount = amount * 10**this.sdk.config.coinDecimals
             let undelegateReturnMsg = ''
 
             console.log("client = ", this.client)
@@ -259,10 +260,7 @@ export const useAppStore = defineStore('appStore', {
             );
             const usedFee = calculateFee(
                 Math.round(gasEstimation * 1.4),
-                GasPrice.fromString(
-                    0.025 +
-                    cosmosConfig[this.chainSelected].coinLookup.chainDenom
-                )
+                GasPrice.fromString( 0.025 + this.sdk.config.coinDenom )
             );
             try {
                 const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [delegate], fee, memo)  
