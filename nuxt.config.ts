@@ -25,6 +25,7 @@ export default defineNuxtConfig({
   buildModules: [
     // https://go.nuxtjs.dev/vuetify
     '@nuxtjs/vuetify',
+    '@nuxtjs/svg'
   ],  
   build: {
     transpile: ['vuetify'],
@@ -63,7 +64,19 @@ export default defineNuxtConfig({
   },
   // Vuetify module configuration: https://go.nuxtjs.dev/config-vuetify
   vuetify: {
-
+    customVariables: ['~/assets/variables.scss'],
+    treeShake: true,
+  },
+  svg: {
+    vueSvgLoader: {
+        // vue-svg-loader options
+    },
+    svgSpriteLoader: {
+        // svg-sprite-loader options
+    },
+    fileLoader: {
+        // file-loader options
+    }
   },
   ssr: false
 })

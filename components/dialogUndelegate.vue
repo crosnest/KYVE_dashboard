@@ -9,6 +9,7 @@
           density="default"
           size="large"
           block rounded="lg"
+          :disabled="appStore.staker_my_deleg == '0'"
           v-bind="props">
           Undelegate
         </v-btn>
@@ -25,7 +26,7 @@
             </template>
             
             <template v-slot:append>
-              <v-btn icon="mdi-close" @click="dialog = false"></v-btn>
+              <v-btn icon="mdi-close" @click="close()"></v-btn>
             </template>
 
           <v-card-text>     
@@ -34,28 +35,58 @@
               <p>The token will not be available for the 14 days</p>
               <p>You will receive NO rewards during unbonding period</p>
               <p></p>
+              <v-text-field
+                    v-model="amount"
+                    label="Amount*"
+                    required
+                    suffix="$KYVE"
+                  ></v-text-field>
+              <v-checkbox 
+                v-model="checkbox" 
+                >
+                <template v-slot:label>
+                  I agree to undelegate from {{ appStore.staker.metadata.moniker }}.
+                </template>
+              </v-checkbox>
+              <v-btn 
+                class="text-none ma-6"
+                prepend-icon="mdi-export-variant" 
+                text="Undelegate"
+                @click="submit()"
+                size="large"
+                :disabled="!checkbox"
+              />
+              </div>
+              <div v-if="wait" class="ma-8 text-center">
+              <v-progress-circular                
+                :size="100"
+                :width="5"
+                color="pink-lighten-4"
+                indeterminate 
+                justify="center"
+              ></v-progress-circular>   
             </div>
-            <v-text-field
-                  v-model="amount"
-                  label="Amount*"
-                  required
-                  suffix="$KYVE"
-                ></v-text-field>
-            <v-checkbox 
-              v-model="checkbox" 
+            <div v-if="resultSuccess" class="ma-8 text-center">
+              <v-icon
+                size="150"
+                color="teal-darken-4"
               >
-              <template v-slot:label>
-                I agree to undelegate from {{ appStore.staker.metadata.moniker }}.
-              </template>
-            </v-checkbox>
-            <v-btn 
-              class="text-none ma-6"
-              prepend-icon="mdi-export-variant" 
-              text="Undelegate"
-              @click="submit()"
-              size="large"
-              :disabled="!checkbox"
-            />
+                mdi-marked-circle-outline
+              </v-icon>  
+              <br /><br />
+                {{ cmd_ret }} 
+            </div>
+            <div v-if="resultFailure" class="ma-8 text-center">
+              <v-icon
+                size="150"
+                color="deep-orange-accent-4"
+              >
+                mdi-close-circle-outline
+              </v-icon>  
+              <br /><br />
+                {{ cmd_ret }} 
+            </div>
+
           </v-card-text>
         </v-card>
       </v-dialog> 
@@ -74,11 +105,44 @@ export default {
       dialog: false,
       amount: 0,
       checkbox: false,
+      form: true,
+      wait: false,
+      resultSuccess: false,
+      resultFailure: false
   }),
   methods: {
       async submit() {
-        await this.appStore.undelegate(this.amount)
+        try {
+          this.form = false
+          this.wait = true
+          this.cmd_ret = await this.appStore.undelegate(this.amount)
+          this.wait = false
+          this.resultSuccess = true
+        } catch(error) {
+          this.wait = false
+          this.resultFailure = true
+          this.cmd_ret = error;
+        }
+        this.appStore.notifText = this.cmd_ret
+        this.appStore.notif_event = true
       }
+  },
+  watch: {
+    dialog(visible) {
+      if (visible) {
+        // Here you would put something to happen when dialog opens up
+        // reset dialog state
+        this.amount = 0,
+        this.checkbox = false,
+        this.form = true,
+        this.wait = false,
+        this.resultSuccess = false,
+        this.resultFailure = false
+        this.cmd_ret = {}
+      } else {
+        // Here you would put something to happen when dialog close down
+      }
+    }
   }
 }
 </script>
