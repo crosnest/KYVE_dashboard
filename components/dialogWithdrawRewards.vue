@@ -9,6 +9,7 @@
           density="default"
           size="large"
           block rounded="lg"
+          :disabled="appStore.staker_my_deleg == '0'"
           v-bind="props">
           Claim Rewards
         </v-btn>
@@ -25,7 +26,7 @@
             </template>
             
             <template v-slot:append>
-              <v-btn icon="mdi-close" @click="dialog = false"></v-btn>
+              <v-btn icon="mdi-close" @click="close()"></v-btn>
             </template>
 
           <v-card-text>     
@@ -33,22 +34,52 @@
               <p>Claim your rewards</p>
               <p>Claimed rewards are free to use</p>
               <p></p>
+              <v-checkbox 
+                v-if="appStore.walletAddress == appStore.staker.address"
+                v-model="checkbox_commission"
+                >
+                <template v-slot:label>
+                  Withdraw Commission.
+                </template>
+              </v-checkbox>
+              <v-btn 
+                class="text-none ma-6"
+                prepend-icon="mdi-export-variant" 
+                text="Withdraw"
+                @click="submit()"
+                size="large"
+              />
             </div>
-            <v-checkbox 
-              v-if="appStore.walletAddress == appStore.staker.address"
-              v-model="checkbox_commission"
+            <div v-if="wait" class="ma-8 text-center">
+              <v-progress-circular                
+                :size="100"
+                :width="5"
+                color="pink-lighten-4"
+                indeterminate 
+                justify="center"
+              ></v-progress-circular>   
+            </div>
+            <div v-if="resultSuccess" class="ma-8 text-center">
+              <v-icon
+                size="150"
+                color="teal-darken-4"
               >
-              <template v-slot:label>
-                Withdraw Commission.
-              </template>
-            </v-checkbox>
-            <v-btn 
-              class="text-none ma-6"
-              prepend-icon="mdi-export-variant" 
-              text="Withdraw"
-              @click="submit()"
-              size="large"
-            />
+                mdi-marked-circle-outline
+              </v-icon>  
+              <br /><br />
+                {{ cmd_ret }} 
+            </div>
+            <div v-if="resultFailure" class="ma-8 text-center">
+              <v-icon
+                size="150"
+                color="deep-orange-accent-4"
+              >
+                mdi-close-circle-outline
+              </v-icon>  
+              <br /><br />
+                {{ cmd_ret }} 
+            </div>
+
           </v-card-text>
         </v-card>
       </v-dialog> 
@@ -67,11 +98,44 @@ export default {
       dialog: false,
       amount: 0,
       checkbox_commission: false,
+      form: true,
+      wait: false,
+      resultSuccess: false,
+      resultFailure: false
   }),
   methods: {
       async submit() {
-        await this.appStore.claim_rewards(this.checkbox_commission)
+        try {
+          this.form = false
+          this.wait = true
+          this.cmd_ret = await this.appStore.claim_rewards(this.checkbox_commission)
+          this.wait = false
+          this.resultSuccess = true
+        } catch(error) {
+          this.wait = false
+          this.resultFailure = true
+          this.cmd_ret = error;
+        }
+        this.appStore.notifText = this.cmd_ret
+        this.appStore.notif_event = true
       }
+  },
+  watch: {
+    dialog(visible) {
+      if (visible) {
+        // Here you would put something to happen when dialog opens up
+        // reset dialog state
+        this.amount = 0,
+        this.checkbox_commission = false,
+        this.form = true,
+        this.wait = false,
+        this.resultSuccess = false,
+        this.resultFailure = false
+        this.cmd_ret = {}
+      } else {
+        // Here you would put something to happen when dialog close down
+      }
+    }
   }
 }
 </script>

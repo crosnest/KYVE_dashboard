@@ -33,7 +33,11 @@ export const useAppStore = defineStore('appStore', {
         balance: 0,
         price: 0,
         staker: {} as staker_t,
-        delegatorInfo: {} as delegator_info_t
+        delegatorInfo: {} as delegator_info_t,
+
+        notif_event: false,
+        notifText: ''
+
     }),
     getters: {
         islogged(): boolean {
@@ -114,7 +118,9 @@ export const useAppStore = defineStore('appStore', {
           this.walletName = this.client.getWalletName()
         },
         async disconnect() {
-
+          this.logged = false
+          this.walletAddress = ''
+          this.walletName = ''
         },
         async init_store() {
           const index = cosmosConfig.findIndex((chain) => chain.chainId === this.chainId);
@@ -134,12 +140,9 @@ export const useAppStore = defineStore('appStore', {
           this.logged = true
         },
         async delegate(amount:number, memo:string) {
-            console.log("KeplrStore Delegate ", amount, "with memo ", memo)
             const ukyveAmount = amount * 10**this.sdk.config.coinDecimals
             let delegateReturnMsg = ''
 
-            console.log("client = ", this.client)
-            
             const delegate = {
                 typeUrl: "/kyve.delegation.v1beta1.MsgDelegate",
                 value: MsgDelegate.fromPartial({
@@ -148,7 +151,6 @@ export const useAppStore = defineStore('appStore', {
                     amount: ukyveAmount.toString(),
                   }),
               }
-            console.log(delegate)
             
             const fee = {
                 amount: [
@@ -173,10 +175,10 @@ export const useAppStore = defineStore('appStore', {
                 if(result.code !== 0) {
                     console.log(result.rawLog)
                 }
-    
+                console.log("Delegate Result", result)
                 return result.transactionHash
             } catch (error) {
-              console.error(error)
+                  console.error(error)
             }
         },
         async restake(time:Date, action:string) {
@@ -428,4 +430,15 @@ export interface staker_t {
     total_delegation: string,
     delegator_count: string,
     pools: staker_pools_t[],
+}
+
+export interface notification_t {
+  message: string,
+  top: boolean,
+  bottom: boolean,
+  left: boolean,
+  right: boolean,
+  color: string,
+  transition: string,
+  timeout: number,
 }

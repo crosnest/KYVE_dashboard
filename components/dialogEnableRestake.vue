@@ -9,6 +9,7 @@
           density="default"
           size="large"
           block rounded="lg"
+          :disabled="appStore.staker_my_deleg == '0'"
           v-bind="props">
           Enable Restake
         </v-btn>
@@ -25,7 +26,7 @@
             </template>
             
             <template v-slot:append>
-              <v-btn icon="mdi-close" @click="dialog = false"></v-btn>
+              <v-btn icon="mdi-close" @click="close()"></v-btn>
             </template>
           <v-card-text>     
             <div >
@@ -42,15 +43,43 @@
                 v-model="duration"
                 :items="['1 week', '1 month', '1 year']"
               ></v-select>
+              <v-btn 
+                class="text-none ma-4"
+                prepend-icon="mdi-export-variant" 
+                text="Send"
+                @click="submit()"
+                size="large"  
+              />
             </div>
-            <v-btn 
-              class="text-none ma-4"
-              prepend-icon="mdi-export-variant" 
-              text="Send"
-              @click="submit()"
-              size="large"  
-            />
-            
+            <div v-if="wait" class="ma-8 text-center">
+              <v-progress-circular                
+                :size="100"
+                :width="5"
+                color="pink-lighten-4"
+                indeterminate 
+                justify="center"
+              ></v-progress-circular>   
+          </div>
+          <div v-if="resultSuccess" class="ma-8 text-center">
+            <v-icon
+              size="150"
+              color="teal-darken-4"
+            >
+              mdi-marked-circle-outline
+            </v-icon>  
+            <br /><br />
+              {{ cmd_ret }} 
+          </div>
+          <div v-if="resultFailure" class="ma-8 text-center">
+            <v-icon
+              size="150"
+              color="deep-orange-accent-4"
+            >
+              mdi-close-circle-outline
+            </v-icon>  
+            <br /><br />
+              {{ cmd_ret }} 
+          </div>            
           </v-card-text>
         </v-card>
       </v-dialog> 
@@ -89,8 +118,37 @@ export default {
           default:
             break;
         }
-        await this.appStore.restake(time, this.action)
+        try {
+          this.form = false
+          this.wait = true  
+          this.cmd_ret = await this.appStore.restake(time, this.action)
+          this.wait = false
+          this.resultSuccess = true
+        } catch(error) {
+          this.wait = false
+          this.resultFailure = true
+          this.cmd_ret = error;
+        }
+        this.appStore.notifText = this.cmd_ret
+        this.appStore.notif_event = true
       }
+  },
+  watch: {
+    dialog(visible) {
+      if (visible) {
+        // Here you would put something to happen when dialog opens up
+        // reset dialog state
+        this.duration = '1 Year',
+        this.action = 'Grant',
+        this.form = true,
+        this.wait = false,
+        this.resultSuccess = false,
+        this.resultFailure = false
+        this.cmd_ret = {}
+      } else {
+        // Here you would put something to happen when dialog close down
+      }
+    }
   }
 }
 </script>

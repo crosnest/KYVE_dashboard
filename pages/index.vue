@@ -24,13 +24,13 @@
                       <dialogDelegate />
                     </v-col>
                     <v-col class="col-2 items-center">
-                      <dialogEnableRestake v-if="appStore.staker_my_deleg != '0'"/>
+                      <dialogEnableRestake />
                     </v-col>
                     <v-col class="col-2 items-center">
-                      <dialogUndelegate v-if="appStore.staker_my_deleg != '0'"/>
+                      <dialogUndelegate />
                     </v-col>
                     <v-col class="col-2 items-center">
-                      <dialogWithdrawRewards v-if="appStore.staker_my_deleg != '0'"/>
+                      <dialogWithdrawRewards />
                     </v-col>
                     </v-row>
                 </v-col>

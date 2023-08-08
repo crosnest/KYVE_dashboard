@@ -37,6 +37,7 @@
     
     
     <v-app-bar
+      style="padding-left: 1em; padding-right: 1em;"
       class="bg-pink-lighten-4" 
       :clipped-left="appStore.clipped"
       appStore.fixed
@@ -46,6 +47,7 @@
       <v-toolbar-title>KYVE restake</v-toolbar-title>
       <v-spacer />
         <v-chip class="head_chip"
+          style="margin-left: 1em; margin-right: 1em;"
           v-if="appStore.islogged"
           size="large"
           prepend-avatar="https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/kyve/ukyve.png"
@@ -53,6 +55,7 @@
         >
         <span>{{ appStore.balance }} $KYVE</span>
         </v-chip>
+        
         <v-chip class="head_chip"
           v-if="!appStore.islogged && !appStore.isMobile"
           size="large"
@@ -74,6 +77,12 @@
       <v-container>
         <NuxtPage />
       </v-container>
+      <v-snackbar
+      v-model="appStore.notif_event"
+      multi-line
+    >
+      {{ appStore.notifText }}
+    </v-snackbar>
     </v-main>
     <v-footer>
       <div class="bg-pink-lighten-4 d-flex w-100 align-center px-4">
@@ -86,7 +95,16 @@
           variant="plain"
           size="small"
           href="https://github.com/crosnest/KYVE_dashboard"
+          target="_blank" rel="noopener noreferrer" 
         ></v-btn>
+        <v-btn
+          key="mdi-github"
+          class="mx-4"
+          variant="plain"
+          size="small"
+          href="https://t.me/crosnest"
+          target="_blank" rel="noopener noreferrer" 
+        ><img src="telegram.svg" width="18" height="18"/></v-btn>
         <v-btn
           key="mdi-twitter"
           class="mx-4"
@@ -94,6 +112,7 @@
           variant="plain"
           size="small"
           href="https://twitter.com/Crosnest_com"
+          target="_blank" rel="noopener noreferrer" 
         ></v-btn>
       </div>
 
@@ -106,8 +125,6 @@
 
 <script>
 import { useAppStore } from '@/store/app'
-
-
 async function updateKeplr() {
   try {
     const appStore = useAppStore()
