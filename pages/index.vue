@@ -65,6 +65,7 @@
                     <v-col class="col-6 col-sm-3 text-subtitle2">
                       <strong>Total delegation</strong>
                       <p>{{ appStore.staker_total_deleg }} $KYVE</p>
+                      <p>{{ appStore.dollar_total_deleg }} $usd</p>
                     </v-col>
                     <!-- <v-col class="col-6 col-sm-3 text-subtitle2">
                       <strong>Self Delegation</strong>
@@ -73,10 +74,12 @@
                     <v-col class="col-6 col-sm-3 text-subtitle2">
                       <strong>My Delegation</strong>
                       <p>{{ appStore.staker_my_deleg }} $KYVE</p>
+                      <p>{{ appStore.dollar_my_deleg }} $usd</p>
                     </v-col>
                     <v-col class="col-6 col-sm-3 text-subtitle2">
                       <strong>My Rewards</strong>
                       <p>{{ appStore.staker_my_rewards }} $KYVE</p>
+                      <p>{{ appStore.dollar_my_rewards }} $usd</p>
                     </v-col>
                     <v-col class="col-6 col-sm-3 text-subtitle2">
                       <strong>Delegation APY</strong>
@@ -96,8 +99,6 @@ import { useAppStore } from '@/store/app'
 import { server } from 'process'
 import { VSkeletonLoader } from 'vuetify/labs/VSkeletonLoader'
 
-import cosmosConfig from '~/chain.config'
-
 export default {
   name: 'DefaultLayout',
   components: {
@@ -105,6 +106,17 @@ export default {
   },
   setup() {
     const appStore = useAppStore()
+
+    const priceQuery = "https://api.coingecko.com/api/v3/simple/price?ids=kyve-network&vs_currencies=usd&precision=4"
+    const { data: priceData, pending: pricePending, error: priceError, refresh: priceRefresh } = useFetch(priceQuery, {
+          onResponse({request, response, options}) {
+            const appStore = useAppStore()
+            console.log("PRICE == ", response._data)
+            appStore.price = Number(response._data["kyve-network"].usd)
+          }
+        })
+
+
     const stakerInfo = computed(() => {
       return appStore.sdk.config.rest + '/kyve/query/v1beta1/staker/'+ appStore.stakerAddress
     })
@@ -114,12 +126,13 @@ export default {
             console.log("staker = ", response._data)
             appStore.staker = response._data.staker
           },
-          watch: [stakerInfo],
-          server: false
+          watch: [stakerInfo]
         })
 
     const delegationInfo = computed(() => {
-      if (appStore.islogged) {return appStore.sdk.config.rest + '/kyve/query/v1beta1/delegator/' + appStore.stakerAddress + '/' + appStore.walletAddress}
+      if (appStore.islogged) {
+        return appStore.sdk.config.rest + '/kyve/query/v1beta1/delegator/' + appStore.stakerAddress + '/' + appStore.walletAddress
+      }
       else {return ''}
     })
     const { data: delegationData, pending: delegationPending, error: delegationError, refresh: delegationRefresh } = useFetch(delegationInfo, {
@@ -136,7 +149,7 @@ export default {
     const { data: balanceData, pending: balancePending, error: balanceError, refresh: balanceRefresh } = useFetch(balanceAddress, {
           onResponse({request, response, options}) {
             const appStore = useAppStore()
-            appStore.balance = Number(response._data.amount) / 10**cosmosConfig[appStore.chainSelected].coinLookup.denomExponent
+            appStore.balance = Number(response._data.amount) / 10**appStore.sdk.config.coinDecimals
           },
           watch: [balanceAddress],
           lazy: true,
@@ -146,7 +159,5 @@ export default {
     const mailtoLink = computed(() => `mailto:${appStore.staker_metadata?.security_contact}`)
     return { appStore, stakerPending, delegationPending, mailtoLink}
   },
-  methods: {
-  }
 }
 </script>

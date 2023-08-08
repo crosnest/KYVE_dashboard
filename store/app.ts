@@ -28,6 +28,7 @@ export const useAppStore = defineStore('appStore', {
         walletAddress: '',
         walletName: '',
         balance: 0,
+        price: 0,
         staker: {} as staker_t,
         delegatorInfo: {} as delegator_info_t
     }),
@@ -60,6 +61,11 @@ export const useAppStore = defineStore('appStore', {
             if (this.staker?.total_delegation === undefined) return ''
             return Number(Number(this.staker.total_delegation)/10**this.sdk.config.coinDecimals).toLocaleString()
         },
+        dollar_total_deleg():string {
+          if (this.staker?.total_delegation === undefined) return '0'
+          const price_value = this.price * Number(Number(this.staker.total_delegation)/10**this.sdk.config.coinDecimals)
+          return price_value.toLocaleString()
+        },
         staker_self_deleg():string {
             if (this.staker?.self_delegation === undefined) return ''
             return Number(Number(this.staker.self_delegation)/10**this.sdk.config.coinDecimals).toLocaleString()
@@ -71,9 +77,19 @@ export const useAppStore = defineStore('appStore', {
           if (this.delegatorInfo?.delegation_amount === undefined) return '0'
           return Number(Number(this.delegatorInfo.delegation_amount)/10**this.sdk.config.coinDecimals).toLocaleString()
         },
+        dollar_my_deleg():string {
+          if (this.delegatorInfo?.delegation_amount === undefined) return '0'
+          const price_value = this.price * Number(Number(this.delegatorInfo?.delegation_amount)/10**this.sdk.config.coinDecimals)
+          return price_value.toLocaleString()
+        },
         staker_my_rewards():string {
           if (this.delegatorInfo?.current_reward === undefined) return '0'
           return Number(Number(this.delegatorInfo.current_reward)/10**this.sdk.config.coinDecimals).toLocaleString()
+        },
+        dollar_my_rewards():string {
+          if (this.delegatorInfo?.current_reward === undefined) return '0'
+          const price_value = this.price * Number(Number(this.delegatorInfo?.current_reward)/10**this.sdk.config.coinDecimals) 
+          return price_value.toLocaleString()
         },
         menu_items():any {
             const items = [{
@@ -89,6 +105,11 @@ export const useAppStore = defineStore('appStore', {
         }
     },
     actions: {
+        async updateWallet() {
+          this.client = await this.sdk.fromKeplr();
+          this.walletAddress = this.client.account.address
+          this.walletName = this.client.getWalletName()
+        },
         async disconnect() {
 
         },

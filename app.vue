@@ -43,29 +43,29 @@
     >
       <v-toolbar-title>KYVE restake</v-toolbar-title>
       <v-spacer />
-        <v-chip
+        <v-chip class="head_chip"
           v-if="appStore.islogged"
           size="large"
           prepend-avatar="https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/kyve/ukyve.png"
           variant="outlined"
         >
-        {{ appStore.balance }}
+        <span>{{ appStore.balance }} $KYVE</span>
         </v-chip>
-        <v-chip
+        <v-chip class="head_chip"
           v-if="!appStore.islogged && !appStore.isMobile"
           size="large"
           prepend-avatar="https://assets.website-files.com/62dbc9b6b1444851f065c74a/62dbc9b6b14448026c65c7fe_Keplr_256.png"
           @click="appStore.keplrConnect"
         >
-          Connect wallet
+        <span>Connect wallet</span>
         </v-chip>
-        <v-chip
-          v-else-if="appStore.islogged"
+        <v-chip class="head_chip"
+          v-else-if="appStore.islogged" 
           size="large"
           prepend-avatar="https://assets.website-files.com/62dbc9b6b1444851f065c74a/62dbc9b6b14448026c65c7fe_Keplr_256.png"
           @click="appStore.disconnect"
         >
-          {{appStore.walletName}}
+        <span>{{appStore.walletName}}</span>
         </v-chip>
     </v-app-bar>
     <v-main>
@@ -86,6 +86,17 @@
 
 <script>
 import { useAppStore } from '@/store/app'
+
+
+async function updateKeplr() {
+  try {
+    const appStore = useAppStore()
+    await appStore.updateWallet()
+  } catch (error) {
+    console.log("ERROR")
+  }
+}
+
 export default {
   name: 'DefaultLayout',
   setup() {
@@ -98,6 +109,23 @@ export default {
     return { appStore }
   },
   methods: {
+  },
+  beforeMount () {
+    window.addEventListener("keplr_keystorechange", updateKeplr);
+  },
+  beforeDestroy () {
+    window.removeEventListener("keplr_keystorechange", updateKeplr);
   }
 }
 </script>
+
+<style>
+.head_chip{
+  width:12em;
+}
+.head_chip span{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+</style>
