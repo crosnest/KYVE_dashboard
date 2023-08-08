@@ -26,10 +26,10 @@
             </template>
             
             <template v-slot:append>
-              <v-btn icon="mdi-close" @click="close()"></v-btn>
+              <v-btn icon="mdi-close" @click="dialog=false"></v-btn>
             </template>
           <v-card-text>     
-            <div >
+            <div v-if="form">
               <p>Select the action</p>
               <v-select
                 label="Select"
@@ -99,6 +99,10 @@ export default {
       duration: '1 Year',
       action: 'Grant',
       memo: '',
+      form: true,
+      wait: false,
+      resultSuccess: false,
+      resultFailure: false
   }),
   methods: {
       async submit() {

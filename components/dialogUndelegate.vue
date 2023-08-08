@@ -26,11 +26,11 @@
             </template>
             
             <template v-slot:append>
-              <v-btn icon="mdi-close" @click="close()"></v-btn>
+              <v-btn icon="mdi-close" @click="dialog=false"></v-btn>
             </template>
 
           <v-card-text>     
-            <div >
+            <div v-if="form">
               <p>Undelegation will take effect immediatly and cannot be cancelled</p>
               <p>The token will not be available for the 14 days</p>
               <p>You will receive NO rewards during unbonding period</p>
@@ -71,7 +71,7 @@
                 size="150"
                 color="teal-darken-4"
               >
-                mdi-marked-circle-outline
+              mdi-checkbox-marked-circle-outline
               </v-icon>  
               <br /><br />
                 {{ cmd_ret }} 

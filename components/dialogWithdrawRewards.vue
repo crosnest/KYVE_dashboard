@@ -26,11 +26,11 @@
             </template>
             
             <template v-slot:append>
-              <v-btn icon="mdi-close" @click="close()"></v-btn>
+              <v-btn icon="mdi-close" @click="dialog=false"></v-btn>
             </template>
 
           <v-card-text>     
-            <div >
+            <div v-if="form">
               <p>Claim your rewards</p>
               <p>Claimed rewards are free to use</p>
               <p></p>
@@ -62,9 +62,9 @@
             <div v-if="resultSuccess" class="ma-8 text-center">
               <v-icon
                 size="150"
-                color="teal-darken-4"
+                color="teal-darken-3"
               >
-                mdi-marked-circle-outline
+              mdi-checkbox-marked-circle-outline
               </v-icon>  
               <br /><br />
                 {{ cmd_ret }} 

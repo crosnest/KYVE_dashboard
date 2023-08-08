@@ -126,7 +126,6 @@ export default {
     const { data: stakerData, pending: stakerPending, error: stakerError, refresh: stakerRefresh } = useFetch(stakerInfo, {
           onResponse({request, response, options}) {
             const appStore = useAppStore()
-            console.log("staker = ", response._data)
             appStore.staker = response._data.staker
           },
           watch: [stakerInfo]
@@ -141,7 +140,6 @@ export default {
     const { data: delegationData, pending: delegationPending, error: delegationError, refresh: delegationRefresh } = useFetch(delegationInfo, {
           onResponse({request, response, options}) {
             const appStore = useAppStore()
-            console.log("staker = ", response._data)
             appStore.delegatorInfo = response._data.delegator
           },
           watch: [delegationInfo],
