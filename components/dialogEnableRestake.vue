@@ -63,9 +63,9 @@
           <div v-if="resultSuccess" class="ma-8 text-center">
             <v-icon
               size="150"
-              color="teal-darken-4"
+              color="teal-darken-3"
             >
-              mdi-marked-circle-outline
+            mdi-checkbox-marked-circle-outline
             </v-icon>  
             <br /><br />
               {{ cmd_ret }} 

@@ -69,7 +69,7 @@
             <div v-if="resultSuccess" class="ma-8 text-center">
               <v-icon
                 size="150"
-                color="teal-darken-4"
+                color="teal-darken-3"
               >
               mdi-checkbox-marked-circle-outline
               </v-icon>  
