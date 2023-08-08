@@ -29,6 +29,9 @@
                     <v-col class="col-2 items-center">
                       <dialogUndelegate v-if="appStore.staker_my_deleg != '0'"/>
                     </v-col>
+                    <v-col class="col-2 items-center">
+                      <dialogWithdrawRewards v-if="appStore.staker_my_deleg != '0'"/>
+                    </v-col>
                     </v-row>
                 </v-col>
                 <v-col class="col-6">
@@ -157,6 +160,7 @@ export default {
         })
       
     const mailtoLink = computed(() => `mailto:${appStore.staker_metadata?.security_contact}`)
+
     return { appStore, stakerPending, delegationPending, mailtoLink}
   },
 }

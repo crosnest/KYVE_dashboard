@@ -4,7 +4,7 @@
       width="30%"
     >
       <template v-slot:activator="{ props }">
-        <v-btn prepend-icon="mdi-reload"
+        <v-btn prepend-icon="mdi-cash-plus"
           variant="tonal"
           density="default"
           size="large"
@@ -28,7 +28,7 @@
             <template v-slot:append>
               <v-btn icon="mdi-close" @click="dialog = false"></v-btn>
             </template> 
-        <v-card-text>
+        <v-card-text v-if="step === 1">
           <div >
             <p>Select the number of KYVE to delegate</p>
                 <v-text-field
@@ -60,6 +60,11 @@
               size="large"  
             />
         </v-card-text>
+        <v-card-text v-if="step === 2">
+          <div>
+            <h2>Congratulation</h2>
+          </div>
+        </v-card-text>
       </v-card>
     </v-dialog>
 </template>
@@ -71,7 +76,9 @@ import { useAppStore } from '@/store/app'
 export default {
   setup() {
       const appStore = useAppStore()
-      return {appStore, cosmosConfig}
+      let cmd_ret = {}
+      let step = 1
+      return {appStore, step, cosmosConfig}
   },
   data: () => ({
       validator: 'Crosnest (kyve199403h5jgfr64r9ewv83zx7q4xphhc4wyv8mhp)',
@@ -82,7 +89,9 @@ export default {
   methods: {
       async submit() {
         console.log(this.amount, this.memo)
-        await this.appStore.delegate(this.amount, this.memo)
+        this.step = 2;
+        this.cmd_ret = await this.appStore.delegate(this.amount, this.memo)
+        this.step = 3;
       }
   }
 }

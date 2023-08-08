@@ -37,10 +37,12 @@
     
     
     <v-app-bar
+      class="bg-pink-lighten-4" 
       :clipped-left="appStore.clipped"
       appStore.fixed
       app
     >
+      <v-avatar image="https://dl-eu.cros-nest.com/assets/logo-nest.png"></v-avatar>
       <v-toolbar-title>KYVE restake</v-toolbar-title>
       <v-spacer />
         <v-chip class="head_chip"
@@ -73,16 +75,34 @@
         <NuxtPage />
       </v-container>
     </v-main>
+    <v-footer>
+      <div class="bg-pink-lighten-4 d-flex w-100 align-center px-4">
+        <strong>Get connected with us on social networks!</strong>
+        <v-spacer></v-spacer>
+        <v-btn
+          key="mdi-github"
+          class="mx-4"
+          icon="mdi-github"
+          variant="plain"
+          size="small"
+          href="https://github.com/crosnest/KYVE_dashboard"
+        ></v-btn>
+        <v-btn
+          key="mdi-twitter"
+          class="mx-4"
+          icon="mdi-twitter"
+          variant="plain"
+          size="small"
+          href="https://twitter.com/Crosnest_com"
+        ></v-btn>
+      </div>
 
-    <v-footer
-      :absolute="!appStore.fixed"
-      app
-    >
-      <span>&copy; {{ new Date().getFullYear() }}</span>
+      <div class="px-4 py-2 bg-black text-center w-100">
+        {{ new Date().getFullYear() }} — <strong>Crosnest</strong>
+      </div>
     </v-footer>
   </v-app>
 </template>
-
 
 <script>
 import { useAppStore } from '@/store/app'

@@ -5,7 +5,9 @@ import { MyKyveSDK } from "~/signer_util/MyKyveSDK"
 import { KyveWebClient } from "@kyvejs/sdk"
 
 // import {} from "@kyvejs/types/client/kyve/stakers/v1beta1/tx"
-import { MsgDelegate, MsgUndelegate } from "@kyvejs/types/client/kyve/delegation/v1beta1/tx"
+import { QueryStakerRequest, QueryStakerResponse } from "@kyvejs/types/lcd/kyve/query/v1beta1/stakers"
+import { MsgDelegate, MsgUndelegate, MsgWithdrawRewards } from "@kyvejs/types/client/kyve/delegation/v1beta1/tx"
+import { MsgClaimCommissionRewards } from "@kyvejs/types/client/kyve/stakers/v1beta1/tx"
 import { MsgGrant, MsgRevoke } from "@kyvejs/types/client/cosmos/authz/v1beta1/tx"
 import { GenericAuthorization } from "@kyvejs/types/client/cosmos/authz/v1beta1/authz"
 
@@ -14,8 +16,9 @@ import cosmosConfig from '~/chain.config'
 export const useAppStore = defineStore('appStore', {
     // arrow function recommended for full type inference
     state: () => ({
-        drawer: true,
+        drawer: false,
         rail: false,
+        clipped: false,
         stakerAddress : '', //'kyve199403h5jgfr64r9ewv83zx7q4xphhc4wyv8mhp',
         chainId: '',
         sdk: {} as MyKyveSDK,
@@ -249,11 +252,9 @@ export const useAppStore = defineStore('appStore', {
             
         },
         async undelegate(amount:number, memo:string) {
-            console.log("KeplrStore Undelegate ", amount, "with memo ", memo)
+            console.log("KeplrStore Undelegate ", amount)
             const ukyveAmount = amount * 10**this.sdk.config.coinDecimals
             let undelegateReturnMsg = ''
-
-            console.log("client = ", this.client)
             
             const delegate = {
                 typeUrl: "/kyve.delegation.v1beta1.MsgUndelegate",
@@ -293,6 +294,55 @@ export const useAppStore = defineStore('appStore', {
             } catch (error) {
               console.error(error)
             }
+        },
+        async claim_rewards(commissions:boolean) {
+          console.log("KeplrStore claim Commissions")
+
+          let Txs = []
+          let RewardsReturnMsg = ''
+
+          if (commissions) {
+            const lcdClient = await this.sdk.createLCDClient()
+            const staker_resp = await lcdClient.kyve.query.v1beta1.staker(QueryStakerRequest.fromPartial({address: this.stakerAddress}))
+            const ukyveCommissions = staker_resp.staker?.metadata?.commission_rewards
+            const withdrawCommissions = {
+                typeUrl: "/kyve.stakers.v1beta1.MsgClaimCommissionRewards",
+                value: MsgClaimCommissionRewards.fromPartial({
+                    creator: this.walletAddress,
+                    amount: ukyveCommissions,
+                  }),
+              }
+            console.log(withdrawCommissions)
+            Txs.push(withdrawCommissions)
+          }
+          const withdrawRewards = {
+            typeUrl: "/kyve.delegation.v1beta1.MsgWithdrawRewards",
+            value: MsgWithdrawRewards.fromPartial({
+                creator: this.walletAddress,
+                staker: this.stakerAddress
+              }),
+          }
+          Txs.push(withdrawRewards)
+          
+          const gasEstimation = await this.client.nativeClient.simulate(
+              this.walletAddress,
+              Txs,
+              ''
+          );
+          const usedFee = calculateFee(
+              Math.round(gasEstimation * 1.4),
+              GasPrice.fromString( this.sdk.config.gasPrice + this.sdk.config.coinDenom )
+          );
+          try {
+              const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, Txs, usedFee, '')  
+              if(result.code !== 0) {
+                  console.log(result.rawLog)
+              }
+  
+              return result.transactionHash
+          } catch (error) {
+            console.error(error)
+          }
         }
     }
 })
