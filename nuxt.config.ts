@@ -67,5 +67,16 @@ export default defineNuxtConfig({
     customVariables: ['~/assets/variables.scss'],
     treeShake: true,
   },
+  svg: {
+    vueSvgLoader: {
+        // vue-svg-loader options
+    },
+    svgSpriteLoader: {
+        // svg-sprite-loader options
+    },
+    fileLoader: {
+        // file-loader options
+    }
+  },
   ssr: false
 })

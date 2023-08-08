@@ -104,7 +104,7 @@
           size="small"
           href="https://t.me/crosnest"
           target="_blank" rel="noopener noreferrer" 
-        ><img src="telegram.svg" width="18" height="18"/></v-btn>
+        ><img src="~assets/telegram.svg" width="18" height="18"/></v-btn>
         <v-btn
           key="mdi-twitter"
           class="mx-4"
