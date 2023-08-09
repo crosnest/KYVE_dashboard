@@ -20,7 +20,7 @@ export const useAppStore = defineStore('appStore', {
         rail: false,
         clipped: false,
         stakerAddress : '', //'kyve199403h5jgfr64r9ewv83zx7q4xphhc4wyv8mhp',
-        chainId: '',
+        chainId: '' as "kyve-1" | "kaon-1" | "korellia" | "kyve-beta" | "kyve-alpha" | "kyve-local" | undefined,
         sdk: {} as MyKyveSDK,
         client: {} as KyveWebClient,
         logged: false,
@@ -63,6 +63,10 @@ export const useAppStore = defineStore('appStore', {
         staker_commission(): string {
             if (this.staker?.metadata?.commission === undefined) return ''
             return Number(Number(this.staker.metadata.commission)*100).toLocaleString()
+        },
+        staker_commission_rewards(): string {
+          if (this.staker?.metadata?.commission_rewards === undefined) return ''
+          return Number(Number(this.staker.metadata.commission_rewards)/10**this.sdk.config.coinDecimals).toLocaleString()
         },
         staker_total_deleg(): string {
             if (this.staker?.total_delegation === undefined) return ''
@@ -349,16 +353,6 @@ export const useAppStore = defineStore('appStore', {
     }
 })
 
-function buildExecMessage(grantee, messages) {
-    return {
-      typeUrl: "/cosmos.authz.v1beta1.MsgExec",
-      value: {
-        grantee: grantee,
-        msgs: messages
-      }
-    }
-  }
-
 function    buildGrantMsg(type, authValue, expiryDate) {
     const appStore = useAppStore()
     const value = {
@@ -372,16 +366,9 @@ function    buildGrantMsg(type, authValue, expiryDate) {
         expiration: expiryDate
       }
     }
-    if (appStore.walletAddress !== appStore.walletAddress) {
-      return buildExecMessage(appStore.walletAddress, [{
-        typeUrl: "/cosmos.authz.v1beta1.MsgGrant",
-        value: MsgGrant.encode(MsgGrant.fromPartial(value)).finish()
-      }])
-    } else {
-      return {
-        typeUrl: "/cosmos.authz.v1beta1.MsgGrant",
-        value: value
-      }
+    return {
+      typeUrl: "/cosmos.authz.v1beta1.MsgGrant",
+      value: value
     }
   }
 

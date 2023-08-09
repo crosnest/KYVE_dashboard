@@ -60,6 +60,11 @@
                       <v-icon icon="mdi-account"></v-icon> <strong>Self Delegation:</strong> {{appStore.staker_self_deleg}}
                     </v-col>
                   </v-row>
+                  <v-row>
+                    <v-col class="col-6 row items-center" v-if="this.appStore.stakerAddress === this.appStore.walletAddress">
+                      <v-icon icon="mdi-account"></v-icon> <strong>Commission rewards:</strong> {{appStore.staker_commission_rewards}}
+                    </v-col>
+                  </v-row>
                   </v-col>
                   <v-divider 
                   style="margin-top: 1em;margin-bottom: 1em;"
@@ -99,8 +104,8 @@
 
 <script>
 import { useAppStore } from '@/store/app'
-import { server } from 'process'
 import { VSkeletonLoader } from 'vuetify/labs/VSkeletonLoader'
+import { useIntervalFn } from '@vueuse/core'
 
 export default {
   name: 'DefaultLayout',
@@ -158,8 +163,30 @@ export default {
         })
       
     const mailtoLink = computed(() => `mailto:${appStore.staker_metadata?.security_contact}`)
+    const update = computed(() => appStore.notif_event)
+
+    useIntervalFn(() => {
+      refresh()
+    }, 30000) // call it back every 30s
 
     return { appStore, stakerPending, delegationPending, mailtoLink}
   },
+  data: () => ({
+
+  }),
+  methods: {
+    refresh() {
+      this.balanceRefresh()
+      this.delegationRefresh()
+      this.stakerRefresh()
+    }
+  },
+  watch: {
+    update(event) {
+      if (event) {
+        this.refresh()
+      }
+    }
+  }
 }
 </script>
