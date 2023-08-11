@@ -2,28 +2,28 @@
   <v-app>
 
     <v-navigation-drawer 
-      v-model="appStore.drawer"
-      :rail="appStore.rail"
+      v-model="drawer"
+      :rail="rail"
       permanent
-      @click="appStore.rail = false"
+      @click="rail = false"
     >
+    <!-- prepend-avatar="https://dl-eu.cros-nest.com/assets/logo-nest.png" -->
       <v-list-item
-          prepend-avatar="https://dl-eu.cros-nest.com/assets/logo-nest.png"
-          title="Crosnest KYVE webapp"
+          title="Crosnest webapp"
           nav
       >
         <template v-slot:append>
           <v-btn
             variant="text"
             icon="mdi-chevron-left"
-            @click.stop="appStore.rail = !appStore.rail"
+            @click.stop="rail = !rail"
           ></v-btn>
         </template>
       </v-list-item>
       <v-divider></v-divider>
       <v-list  density="compact" nav>
         <v-list-item
-          v-for="(item, i) in appStore.items"
+          v-for="(item, i) in items"
           :key="i"
           :to="item.to"
           :prepend-icon="item.icon"
@@ -140,11 +140,31 @@ export default {
     const appStore = useAppStore()
     appStore.chainId = import.meta.env['VITE_CHAIN_ID']
     appStore.stakerAddress = import.meta.env['VITE_STAKER_ADDRESS']
+    appStore.validatorAddress = import.meta.env['VITE_VALIDATOR_ADDRESS']
+    appStore.restakeBotAddress = import.meta.env['VITE_RESTAKE_BOT']
+
     appStore.init_store()
     const { isMobile } = useDevice();
     appStore.isMobile = isMobile
     return { appStore }
   },
+  data: () => ({
+    drawer: true,
+    rail: false,
+    clipped: false,
+    items: [
+        {
+          icon: 'mdi-view-dashboard',
+          title: 'Dashboard',
+          to: '/'
+        },
+        // {
+        //   icon: 'mdi-inbox-arrow-down',
+        //   title: 'Governance',
+        //   to: '/governance'
+        // }
+      ],
+  }),
   methods: {
   },
   beforeMount () {
