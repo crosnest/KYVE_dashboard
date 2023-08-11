@@ -6,7 +6,8 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "restake": "node bot/index.js"
   },
   "devDependencies": {
     "@nuxt/devtools": "latest",
@@ -22,6 +23,7 @@
     "@nuxtjs/device": "^3.1.0",
     "@nuxtjs/svg": "^0.4.0",
     "@pinia/nuxt": "^0.4.11",
+    "@vueuse/core": "^10.3.0",
     "moment": "^2.29.4",
     "vuetify": "^3.3.11"
   }

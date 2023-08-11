@@ -10,17 +10,18 @@ import { MsgDelegate, MsgUndelegate, MsgWithdrawRewards } from "@kyvejs/types/cl
 import { MsgClaimCommissionRewards } from "@kyvejs/types/client/kyve/stakers/v1beta1/tx"
 import { MsgGrant, MsgRevoke } from "@kyvejs/types/client/cosmos/authz/v1beta1/tx"
 import { GenericAuthorization } from "@kyvejs/types/client/cosmos/authz/v1beta1/authz"
+import { MsgVote } from "@kyvejs/types/client/cosmos/gov/v1/tx"
+import { VoteOption } from "@kyvejs/types/client/cosmos/gov/v1/gov"
 
 import cosmosConfig from '~/chain.config'
 
 export const useAppStore = defineStore('appStore', {
     // arrow function recommended for full type inference
     state: () => ({
-        drawer: false,
-        rail: false,
-        clipped: false,
-        stakerAddress : '', //'kyve199403h5jgfr64r9ewv83zx7q4xphhc4wyv8mhp',
-        chainId: '',
+        validatorAddress : '',
+        stakerAddress : '',
+        restakeBotAddress: '',
+        chainId: '' as "kyve-1" | "kaon-1" | "korellia" | "kyve-beta" | "kyve-alpha" | "kyve-local" | undefined,
         sdk: {} as MyKyveSDK,
         client: {} as KyveWebClient,
         logged: false,
@@ -63,6 +64,10 @@ export const useAppStore = defineStore('appStore', {
         staker_commission(): string {
             if (this.staker?.metadata?.commission === undefined) return ''
             return Number(Number(this.staker.metadata.commission)*100).toLocaleString()
+        },
+        staker_commission_rewards(): string {
+          if (this.staker?.metadata?.commission_rewards === undefined) return ''
+          return Number(Number(this.staker.metadata.commission_rewards)/10**this.sdk.config.coinDecimals).toLocaleString()
         },
         staker_total_deleg(): string {
             if (this.staker?.total_delegation === undefined) return ''
@@ -220,7 +225,7 @@ export const useAppStore = defineStore('appStore', {
                     typeUrl: "/cosmos.authz.v1beta1.MsgRevoke",
                     value: MsgRevoke.fromPartial({
                         granter: this.walletAddress,
-                        grantee: "kyve16aaz698xcnrnpp4jaw90dht4tqumxnen357lws",
+                        grantee: this.restakeBotAddress,
                         msg_type_url: '/kyve.delegation.v1beta1.MsgDelegate'
                     })
                 }
@@ -345,25 +350,62 @@ export const useAppStore = defineStore('appStore', {
           } catch (error) {
             console.error(error)
           }
+        },
+        async gov_vote (propnum:string, voteOption:string) {
+          let finalVote:VoteOption
+          switch (voteOption) {
+            case 'Yes':
+              finalVote = VoteOption.VOTE_OPTION_YES
+              break
+            case 'Abstain':
+              finalVote = VoteOption.VOTE_OPTION_ABSTAIN
+              break
+            case 'No':
+              finalVote = VoteOption.VOTE_OPTION_NO
+              break
+            case 'NoWithVeto':
+              finalVote = VoteOption.VOTE_OPTION_NO_WITH_VETO
+              break
+            default:
+              finalVote = VoteOption.VOTE_OPTION_UNSPECIFIED
+          }
+          const voteSend = {
+            typeUrl: "/cosmos.gov.v1.MsgVote",
+            value: MsgVote.fromPartial({
+                proposal_id: propnum,
+                voter: this.walletAddress,
+                option: finalVote,
+            }),
+          }
+
+          const gasEstimation = await this.client.nativeClient.simulate(
+            this.walletAddress,
+            [voteSend],
+            ''
+          );
+          const usedFee = calculateFee(
+              Math.round(gasEstimation * 1.4),
+              GasPrice.fromString( this.sdk.config.gasPrice + this.sdk.config.coinDenom )
+          );
+          try {
+              const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [voteSend], usedFee, '')  
+              if(result.code !== 0) {
+                  console.log(result.rawLog)
+              }
+
+              return result.transactionHash
+          } catch (error) {
+            console.error(error)
+          }
         }
     }
 })
-
-function buildExecMessage(grantee, messages) {
-    return {
-      typeUrl: "/cosmos.authz.v1beta1.MsgExec",
-      value: {
-        grantee: grantee,
-        msgs: messages
-      }
-    }
-  }
 
 function    buildGrantMsg(type, authValue, expiryDate) {
     const appStore = useAppStore()
     const value = {
       granter: appStore.walletAddress,
-      grantee: "kyve16aaz698xcnrnpp4jaw90dht4tqumxnen357lws",
+      grantee: appStore.restakeBotAddress,
       grant: {
         authorization: {
           typeUrl: type,
@@ -372,16 +414,9 @@ function    buildGrantMsg(type, authValue, expiryDate) {
         expiration: expiryDate
       }
     }
-    if (appStore.walletAddress !== appStore.walletAddress) {
-      return buildExecMessage(appStore.walletAddress, [{
-        typeUrl: "/cosmos.authz.v1beta1.MsgGrant",
-        value: MsgGrant.encode(MsgGrant.fromPartial(value)).finish()
-      }])
-    } else {
-      return {
-        typeUrl: "/cosmos.authz.v1beta1.MsgGrant",
-        value: value
-      }
+    return {
+      typeUrl: "/cosmos.authz.v1beta1.MsgGrant",
+      value: value
     }
   }
 

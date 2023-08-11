@@ -41,7 +41,7 @@
               <v-select
                 label="Select"
                 v-model="duration"
-                :items="['1 week', '1 month', '1 year']"
+                :items="['1 Week', '1 Month', '1 Year']"
               ></v-select>
               <v-btn 
                 class="text-none ma-4"
@@ -108,20 +108,22 @@ export default {
       async submit() {
         console.log(this.duration, this.action)
         const time = new Date()
+        console.log("current time = ", time.toISOString())
         switch (this.duration) {
-          case '1 week':
-            time.setDate(time.getDate() + 7);
+          case '1 Week':
+            time.setDate(new Date().getDate() + 7);
             break;
-          case '1 month':
-            time.setDate(time.getDate() + 31);
+          case '1 Month':
+            time.setDate(new Date().getDate() + 31);
             break;
-          case '1 year':
-            time.setDate(time.getDate() + 365);
+          case '1 Year':
+            time.setDate(new Date().getDate() + 365);
           break;
         
           default:
             break;
         }
+        console.log("futur time = ", time.toISOString())
         try {
           this.form = false
           this.wait = true  
