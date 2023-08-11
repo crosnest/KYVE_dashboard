@@ -144,6 +144,9 @@ export const useAppStore = defineStore('appStore', {
           this.walletName = this.client.getWalletName()
           this.logged = true
         },
+        getExplorerLink(TxHash:string):string {
+          return new URL(TxHash, cosmosConfig[this.chainSelected].explorerUrl).href 
+        },
         async delegate(amount:number, memo:string) {
             const ukyveAmount = amount * 10**this.sdk.config.coinDecimals
             let delegateReturnMsg = ''

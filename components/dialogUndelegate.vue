@@ -74,7 +74,7 @@
               mdi-checkbox-marked-circle-outline
               </v-icon>  
               <br /><br />
-                {{ cmd_ret }} 
+              <a :href="appStore.getExplorerLink(cmd_ret)" target="_blank" rel="noopener noreferrer" >View on explorer</a>
             </div>
             <div v-if="resultFailure" class="ma-8 text-center">
               <v-icon
@@ -116,12 +116,13 @@ export default {
           this.form = false
           this.wait = true
           this.cmd_ret = await this.appStore.undelegate(this.amount)
+          if(this.cmd_ret == undefined) { throw new TypeError("Transaction abort")}
           this.wait = false
           this.resultSuccess = true
         } catch(error) {
           this.wait = false
           this.resultFailure = true
-          this.cmd_ret = error;
+          this.cmd_ret = error.message;
         }
         this.appStore.notifText = this.cmd_ret
         this.appStore.notif_event = true

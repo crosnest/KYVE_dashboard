@@ -14,8 +14,15 @@
       >
         <template v-slot:append>
           <v-btn
+            v-if="rail == false"
             variant="text"
             icon="mdi-chevron-left"
+            @click.stop="rail = !rail"
+          ></v-btn>
+          <v-btn
+            v-else
+            variant="text"
+            icon="mdi-chevron-right"
             @click.stop="rail = !rail"
           ></v-btn>
         </template>
@@ -46,14 +53,33 @@
       <v-avatar image="https://dl-eu.cros-nest.com/assets/logo-nest.png"></v-avatar>
       <v-toolbar-title>KYVE restake</v-toolbar-title>
       <v-spacer />
-        <v-chip class="head_chip"
-          style="margin-left: 1em; margin-right: 1em;"
+        <v-chip class="balance_chip"
           v-if="appStore.islogged"
           size="large"
           prepend-avatar="https://raw.githubusercontent.com/chainapsis/keplr-chain-registry/main/images/kyve/ukyve.png"
           variant="outlined"
         >
-        <span>{{ appStore.balance }} $KYVE</span>
+        <span>{{ appStore.balance }} </span>
+        </v-chip>
+        
+        <v-chip class="address_chip"
+          v-if="appStore.islogged"
+          size="large"
+          variant="outlined"
+          @click="onCopy()"
+        >
+        <span v-if="!copy_tooltip">{{ truncateString(appStore.walletAddress,10,5) }}</span>
+        <template v-slot:append>
+        <span
+          style="color: gray;"
+          v-if="copy_tooltip"
+        >address copied</span>
+        <v-icon
+          v-else
+          style="color: gray;"
+          icon="mdi-content-copy"
+        />
+        </template>
         </v-chip>
         
         <v-chip class="head_chip"
@@ -84,7 +110,7 @@
       {{ appStore.notifText }}
     </v-snackbar>
     </v-main>
-    <v-footer>
+    <v-footer color="pink-lighten-4" class="px-0 py-0" app>
       <div class="bg-pink-lighten-4 d-flex w-100 align-center px-4">
         <strong>Get connected with us on social networks!</strong>
         <v-spacer></v-spacer>
@@ -116,7 +142,7 @@
         ></v-btn>
       </div>
 
-      <div class="px-4 py-2 bg-black text-center w-100">
+      <div class="bg-black text-center w-100 py-3">
         {{ new Date().getFullYear() }} — <strong>Crosnest</strong>
       </div>
     </v-footer>
@@ -125,6 +151,9 @@
 
 <script>
 import { useAppStore } from '@/store/app'
+
+let timeOut
+
 async function updateKeplr() {
   try {
     const appStore = useAppStore()
@@ -150,8 +179,9 @@ export default {
   },
   data: () => ({
     drawer: true,
-    rail: false,
+    rail: true,
     clipped: false,
+    copy_tooltip : false,
     items: [
         {
           icon: 'mdi-view-dashboard',
@@ -166,6 +196,25 @@ export default {
       ],
   }),
   methods: {
+    truncateString(str,front,back) {
+      return `${str.substring(0, front)}...${str.substring(
+        str.length - back,
+        str.length
+      )}`;
+    },
+    async onCopy() {
+          this.copy_tooltip = true
+          await navigator.clipboard.writeText(this.appStore.walletAddress)
+          if (timeOut) {
+            clearTimeout(timeOut);
+          }
+          timeOut = setTimeout(() => {
+            this.copy_tooltip = false;
+          }, 1000);
+        }
+  },
+  onUnmounted() {
+    clearTimeout(timeOut);
   },
   beforeMount () {
     window.addEventListener("keplr_keystorechange", updateKeplr);
@@ -177,10 +226,23 @@ export default {
 </script>
 
 <style>
-.head_chip{
+
+.balance_chip{
+  margin-left: 1em; 
+  margin-right: 1em;
   width:12em;
 }
-.head_chip span{
+.address_chip {
+  justify-content: space-between;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  margin-left: 1rem; 
+  margin-right: 1rem;
+  width: 15rem;
+}
+
+.balance span,
+.address_chip span{
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

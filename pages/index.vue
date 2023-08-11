@@ -121,7 +121,8 @@ export default {
             const appStore = useAppStore()
             console.log("PRICE == ", response._data)
             appStore.price = Number(response._data["kyve-network"].usd)
-          }
+          },
+          watch: []
         })
 
 
@@ -164,21 +165,16 @@ export default {
       
     const mailtoLink = computed(() => `mailto:${appStore.staker_metadata?.security_contact}`)
     const update = computed(() => appStore.notif_event)
-
-    useIntervalFn(() => {
-      this.refresh()
-    }, 30000) // call it back every 30s
-
-    return { appStore, stakerPending, delegationPending, mailtoLink}
+        
+    return { appStore, stakerPending, delegationPending, mailtoLink, balanceRefresh, delegationRefresh, stakerRefresh}
   },
   data: () => ({
-
   }),
   methods: {
-    refresh() {
-      this.balanceRefresh()
-      this.delegationRefresh()
-      this.stakerRefresh()
+    async refresh() {
+        await this.balanceRefresh()
+        await this.delegationRefresh()
+        // await this.stakerRefresh()
     }
   },
   watch: {
@@ -187,6 +183,13 @@ export default {
         this.refresh()
       }
     }
-  }
+  },
+  beforeMount() {
+    console.log("setup Timer")
+    useIntervalFn(async () => {
+      console.log("refresh infos")
+        await this.refresh()
+    }, 60000) // call it back every 60s
+  },
 }
 </script>
