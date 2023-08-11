@@ -166,7 +166,7 @@ export default {
     const update = computed(() => appStore.notif_event)
 
     useIntervalFn(() => {
-      refresh()
+      this.refresh()
     }, 30000) // call it back every 30s
 
     return { appStore, stakerPending, delegationPending, mailtoLink}
