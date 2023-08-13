@@ -184,14 +184,14 @@ export const useGovStore = defineStore('govtore', {
         async updateProposals() {
         },
         async fetchVotes(address:string) {
-          // const sdk = new KyveSDK('kyve-1')
-          const sdk = new MyKyveSDK('kyve-1', {
-            rpc: 'https://rpc-kyve.ecostake.com/',
-            rest: cosmosConfig[0].apiURL,
-            coinDenom: cosmosConfig[0].coinLookup.chainDenom,
-            coinDecimals: cosmosConfig[0].coinLookup.denomExponent,
-            gasPrice: 0.02,
-          })
+          const sdk = new KyveSDK('kyve-1')
+          // const sdk = new MyKyveSDK('kyve-1', {
+          //   rpc: 'https://rpc-kyve.ecostake.com/',
+          //   rest: cosmosConfig[0].apiURL,
+          //   coinDenom: cosmosConfig[0].coinLookup.chainDenom,
+          //   coinDecimals: cosmosConfig[0].coinLookup.denomExponent,
+          //   gasPrice: 0.02,
+          // })
           const tmclient = await Tendermint37Client.connect(sdk.config.rpc) 
           const queryClient = new QueryClient(tmclient);
           const rpcClient = createProtobufRpcClient(queryClient);
