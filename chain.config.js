@@ -3,8 +3,8 @@ export default [
       chainId: 'kyve-1',
       name: 'kyve',
       desc: '',
-      apiURL: 'https://api-eu-1.kyve.network/', //'https://rest.cros-nest.com/kyve',
-      rpcURL: 'https://rpc-eu-1.kyve.network',
+      apiURL: 'https://rest.cros-nest.com/kyve', // 'https://api-eu-1.kyve.network/', 
+      rpcURL: 'https://rpc-kyve.mms.team/', // 'https://rpc-eu-1.kyve.network',
       coinLookup: {
         viewDenom: 'KYVE',
         chainDenom: 'ukyve',

@@ -44,54 +44,28 @@
             </v-card>
          </v-col>
       </v-row>
-      <div class="mt-5 ml-5 text-h5">Vote in VOTING PERIOD</div>
+      <div class="mt-5 ml-5 text-h5">Proposals</div>
       <v-row class="ml-2 mt-4">
          <v-col cols="12">
             <v-card class="outline-border" min-height="364">
                <v-card-text>
                   <v-table>
-                     <template v-slot:header>
                      <thead>
                         <tr>
                            <th class="text-left">ID</th>
                            <th class="text-left">Status</th>
+                           <th class="text-left">Proposal Titles</th>
                            <th class="text-left">Voting End Time</th>
                            <th class="text-left">Vote now</th>
                            <th class="text-left">Your Vote</th>
                            <th class="text-left">Crosnest Vote</th>
                         </tr>
                      </thead>
-                     </template>
-                     <tbody>
-                        <proposal-table-row
-                           v-for="proposal of govStore.getVotingProps"
-                           :key="proposal.id"
-                           :proposal="proposal"
-                           :valoperOption="govStore.getValoperVote(proposal.id)"
-                           :userOption = "govStore.getUserVote(proposal.id)"
-                        />
-                     </tbody>
-                  </v-table>
-                  <v-table>
-                     <template v-slot:header>
-                     <thead>
-                        <tr>
-                           <th class="text-left">ID</th>
-                           <th class="text-left">Status</th>
-                           <th class="text-left">Voting End Time</th>
-                           <th class="text-left">Vote now</th>
-                           <th class="text-left">Your Vote</th>
-                           <th class="text-left">Crosnest Vote</th>
-                        </tr>
-                     </thead>
-                     </template>
                      <tbody>
                         <proposal-table-row
                            v-for="proposal of govStore.getEndedProps"
                            :key="proposal.id"
                            :proposal="proposal"
-                           :valoperOption="govStore.getValoperVote(proposal.id)"
-                           :userOption = "govStore.getUserVote(proposal.id)"
                         />
                      </tbody>
                   </v-table>
@@ -174,86 +148,36 @@ export default {
    const govStore = useGovStore()
 
    // get all the proposal in voting period
-   const votingGovQuery = appStore.sdk.config.rest + '/cosmos/gov/v1/proposals?proposal_status=2'
+   const votingGovQuery = appStore.sdk.config.rest + '/cosmos/gov/v1/proposals'
    const { data: votingGovData, pending: votingGovPending, error: votingGovError, refresh: votingGovRefresh } = useFetch(votingGovQuery, {
       onResponse({request, response, options}) {
          const govStore = useGovStore()
-         console.log(response._data)
-         if (response._data?.proposals != undefined) {
-            govStore.votingPeriodProps = response._data.proposals
-         } else {
-            govStore.votingPeriodProps = []
+         for (const proposal of response._data.proposals) {
+            govStore.endedProps.set(proposal.id, proposal)
          }
+      },
+      lazy: true,
+      server: false
+   })
 
-      },
-      lazy: true,
-      server: false
-   })
-   const successGovQuery = appStore.sdk.config.rest + '/cosmos/gov/v1/proposals?proposal_status=3'
-   const { data: successGovData, pending: successGovPending, error: successGovError, refresh: successGovRefresh } = useFetch(successGovQuery, {
-      onResponse({request, response, options}) {
+   async function fetchUserVotes() {
+      (async () => { 
+         const appStore = useAppStore()
          const govStore = useGovStore()
-         for (const proposal of response._data.proposals) {
-            govStore.endedProps.push(proposal)
+         const votes = await govStore.fetchVotes(appStore.walletAddress)
+         for (const tx of votes.tx_responses) {
+            const {id, vote} = govStore.getVote(tx)
+            govStore.userVotes.set(id, vote)
          }
-         console.log("list of props", govStore.endedProps)
-      },
-      lazy: true,
-      server: false
-   })
-   const rejectGovQuery = appStore.sdk.config.rest + '/cosmos/gov/v1/proposals?proposal_status=4'
-   const { data: rejectGovData } = useFetch(rejectGovQuery, {
-      onResponse({request, response, options}) {
-         const govStore = useGovStore()
-         for (const proposal of response._data.proposals) {
-            govStore.endedProps.push(proposal)
-         }
-      },
-      lazy: true,
-      server: false
-   })
-   const failedGovQuery = appStore.sdk.config.rest + '/cosmos/gov/v1/proposals?proposal_status=5'
-   const { data: failedGovData } = useFetch(failedGovQuery, {
-      onResponse({request, response, options}) {
-         const govStore = useGovStore()
-         for (const proposal of response._data.proposals) {
-            govStore.endedProps.push(response._data.proposals)
-         }
-      },
-      lazy: true,
-      server: false
-   })
-   const valoperVoteQuery = computed(() => {
-      return appStore.sdk.config.rest + 
-      '/cosmos/tx/v1beta1/txs?events=message.sender=%27' + 
-      appStore.validatorAddress + 
-      '%27&events=message.action=%27/cosmos.gov.v1beta1.MsgVote%27'
-   });
-   const { data: valoperVoteData, pending: valoperVotePending, error: valoperVoteError, refresh: valoperVoteRefresh } = useFetch(valoperVoteQuery, {
-      onResponse({request, response, options}) {
-            const govStore = useGovStore()
-            govStore.valoperVotes = response._data.txs
-      },
-      watch: [valoperVoteQuery],
-      lazy: true,
-      server: false
-   })
-   //const userVoteQuery = appStore.sdk.config.rest + '/cosmos/gov/v1/proposals/' + props.proposal.id + '/votes/' + appStore.walletAddress
-   const userVoteQuery = computed(() => {
-      return appStore.sdk.config.rest + 
-      '/cosmos/tx/v1beta1/txs?events=message.sender=%27' + 
-      appStore.walletAddress + 
-      '%27&events=message.action=%27/cosmos.gov.v1beta1.MsgVote%27'
-   });
-   const { data: userVoteData, pending: userVotePending, error: userVoteError, refresh: userVoteRefresh } = useFetch(userVoteQuery, {
-      onResponse({request, response, options}) {
-            const govStore = useGovStore()
-            govStore.userVotes = response._data.txs
-      },
-      watch: [userVoteQuery],
-      lazy: true,
-      server: false
-   })
+      })();
+   }
+
+   watchEffect(() => {
+      if (appStore.islogged) {
+        fetchUserVotes();
+      }
+    });
+   
    return { appStore, govStore, votingGovData, votingGovPending }
    },
    data: () => ({
@@ -271,7 +195,7 @@ export default {
       { title: 'End voting time', key: 'voting_end_time'},
       { title: 'Your Vote', key: 'votedValue'},
       { title: 'Crosnest Vote', key: 'valoperVotedValue'}
-   ]
+   ],
   }),
   methods: {
       async voteToId(id) {
@@ -287,7 +211,17 @@ export default {
       dateString(date) {
          const d = new Date(Date.parse(date))
          return d.toLocaleDateString() + " " + d.toLocaleTimeString()
-      }
+      },
+   },
+   beforeMount() {
+      (async () => {
+         const votes = await this.govStore.fetchVotes(this.appStore.operatorAddress)
+         for (const tx of votes.tx_responses) {
+            const {id, vote} = this.govStore.getVote(tx)
+            console.log("found vote : ", id, vote);
+            this.govStore.valoperVotes.set(id, vote)
+         }
+      })();
    }
 }
 

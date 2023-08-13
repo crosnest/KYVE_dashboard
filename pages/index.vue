@@ -152,27 +152,15 @@ export default {
           server: false
         })
     
-    const balanceAddress = computed(() => '/api/balance/' + appStore.walletAddress)
-    const { data: balanceData, pending: balancePending, error: balanceError, refresh: balanceRefresh } = useFetch(balanceAddress, {
-          onResponse({request, response, options}) {
-            const appStore = useAppStore()
-            appStore.balance = Number(response._data.amount) / 10**appStore.sdk.config.coinDecimals
-          },
-          watch: [balanceAddress],
-          lazy: true,
-          server: false
-        })
-      
     const mailtoLink = computed(() => `mailto:${appStore.staker_metadata?.security_contact}`)
     const update = computed(() => appStore.notif_event)
         
-    return { appStore, stakerPending, delegationPending, mailtoLink, balanceRefresh, delegationRefresh, stakerRefresh}
+    return { appStore, stakerPending, delegationPending, mailtoLink, delegationRefresh, stakerRefresh}
   },
   data: () => ({
   }),
   methods: {
     async refresh() {
-        await this.balanceRefresh()
         await this.delegationRefresh()
         // await this.stakerRefresh()
     }

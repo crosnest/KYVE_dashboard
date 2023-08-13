@@ -1,21 +1,18 @@
 <template>
     <v-dialog
       v-model="dialog"
-      width="30%"
+      width="70%"
     >
       <template v-slot:activator="{ props }">
-        <v-btn prepend-icon="mdi-cash-plus"
+        <v-btn prepend-icon="mdi-vote"
           variant="tonal"
-          density="default"
-          size="large"
-          block rounded="lg"
           :disabled="!this.appStore.islogged"
           v-bind="props">
-          Delegate
+          Vote Now
         </v-btn>
       </template>
 
-        <v-card title="Delegate"> 
+        <v-card title="Vote"> 
             <template v-slot:prepend>
               <v-avatar>
                   <v-img
@@ -31,38 +28,38 @@
             </template> 
         <v-card-text >
           <div v-if="form">
-            <p>Select the number of KYVE to delegate</p>
-            <v-text-field
-              v-model="amount"
-              label="Amount*"
-              focused
-              required
-              prefix="KYVE"
-              :placeholder="placeholder"
-            >
-            <template v-slot:append-inner>
-              <v-col style="font-size:smaller;" class=" py-0 my-0">
-                <span class="text-grey-darken-1 py-0 my-0" style="font-size:smaller; cursor: pointer;" @click="setHalf"> half</span>
-                <span class="text-grey-darken-1 py-0 my-0" style="font-size:smaller; cursor: pointer;" @click="setMax"> max</span>
+            <v-row>
+              <v-col cols="9" class="d-none d-lg-flex">
+                <v-textarea
+                  v-for="message,index in govStore.endedProps.get(proposal_id)?.messages" 
+                  :key="index"
+                  variant="outlined"
+                  :label="govStore.getTitle(message)" 
+                  :model-value="govStore.getDescription(message)"
+                  :readonly='readonly'
+                  rounded="20%"
+                  auto-grow
+                  />
               </v-col>
-            </template>
-          </v-text-field>
-          
-            <v-select
-              label="Select"
-              v-model="validator"
-              :items="[appStore.staker_moniker]"
-              readonly
-            ></v-select>
+              <v-col>
+                <v-radio-group v-model="vote_option">
+                      <v-radio label="ABSTAIN" value="2"></v-radio>
+                      <v-radio label="YES" value="1"></v-radio>
+                      <v-radio label="NO" value="3"></v-radio>
+                      <v-radio label="NO with VETO" value="4"></v-radio>
+                </v-radio-group>
 
-            <v-btn 
-              class="text-none ma-4"
-              prepend-icon="mdi-export-variant" 
-              text="Send"
-              @click="submit()"
-              size="large"
-              :disabled="!amount"  
-            />
+                <v-btn 
+                  class="text-none ma-4"
+                  prepend-icon="mdi-export-variant" 
+                  text="Send Vote"
+                  @click="submit()"
+                  size="large"
+                  :disabled="!vote_option"
+                />
+              </v-col>
+            </v-row>
+
           </div>
           <div v-if="wait" class="ma-8 text-center">
               <v-progress-circular                
@@ -100,20 +97,25 @@
 </template>
 
 <script>
+
 import cosmosConfig from '~/chain.config'
 import { useAppStore } from '@/store/app'
+import { useGovStore } from '@/store/governance'
 
 export default {
-  setup() {
+  props: {
+        proposal_id: Object, // Prop to pass the individual proposal data
+    },
+  setup(props) {
       const appStore = useAppStore()
-      let cmd_ret = {}
-      let dialog = false
-      return {appStore, cosmosConfig}
+      const govStore = useGovStore()
+      const proposal_id = props.proposal_id
+      return {appStore, govStore, proposal_id, cosmosConfig}
   },
   data: () => ({
-      validator: 'Crosnest (kyve199403h5jgfr64r9ewv83zx7q4xphhc4wyv8mhp)',
+      readonly: true,
       dialog: false,
-      amount: null,
+      vote_option: undefined,
       memo: '',
       form: true,
       wait: false,
@@ -121,18 +123,12 @@ export default {
       resultFailure: false
   }),
   methods: {
-      setHalf() {
-        this.amount = (this.appStore.balance / 2).toPrecision(this.appStore.sdk.config.coinDecimals)
-      },
-      setMax() {
-        this.amount = this.appStore.balance - 0.5
-      },
       async submit() {
-        console.log(this.amount, this.memo)
+        console.log(this.vote_option, this.proposal_id)
         try {
           this.form = false
           this.wait = true
-          this.cmd_ret = await this.appStore.delegate(this.amount, this.memo)
+          this.cmd_ret = await this.appStore.gov_vote(this.proposal_id, this.vote_option)
           if(this.cmd_ret == undefined) { throw new TypeError("Transaction abort")}
           this.wait = false
           this.resultSuccess = true
@@ -145,17 +141,12 @@ export default {
         this.appStore.notif_event = true
       }
   },
-  computed: {
-    placeholder() {
-      return 'max ' + this.appStore.balance
-    }
-  },  
   watch: {
     dialog(visible) {
       if (visible) {
         // Here you would put something to happen when dialog opens up
         // reset dialog state
-        this.amount = null,
+        this.vote_option = 0,
         this.form = true,
         this.wait = false,
         this.resultSuccess = false,

@@ -60,6 +60,9 @@
           variant="outlined"
         >
         <span>{{ appStore.balance }} </span>
+        <template v-slot:append>
+          <span class="font-weight-bold text-grey-darken-1"> KYVE</span>
+        </template>
         </v-chip>
         
         <v-chip class="address_chip"
@@ -70,13 +73,12 @@
         >
         <span v-if="!copy_tooltip">{{ truncateString(appStore.walletAddress,10,5) }}</span>
         <template v-slot:append>
-        <span
-          style="color: gray;"
+          <span class="text-grey-darken-1"
           v-if="copy_tooltip"
         >address copied</span>
         <v-icon
           v-else
-          style="color: gray;"
+          class="text-grey-darken-1"
           icon="mdi-content-copy"
         />
         </template>
@@ -151,6 +153,7 @@
 
 <script>
 import { useAppStore } from '@/store/app'
+import { useIntervalFn } from '@vueuse/core'
 
 let timeOut
 
@@ -170,12 +173,25 @@ export default {
     appStore.chainId = import.meta.env['VITE_CHAIN_ID']
     appStore.stakerAddress = import.meta.env['VITE_STAKER_ADDRESS']
     appStore.validatorAddress = import.meta.env['VITE_VALIDATOR_ADDRESS']
+    appStore.operatorAddress = import.meta.env['VITE_OPERATO_ADDRESS']
     appStore.restakeBotAddress = import.meta.env['VITE_RESTAKE_BOT']
 
     appStore.init_store()
     const { isMobile } = useDevice();
     appStore.isMobile = isMobile
-    return { appStore }
+
+    const balanceAddress = computed(() => '/api/balance/' + appStore.walletAddress)
+    const { data: balanceData, pending: balancePending, error: balanceError, refresh: balanceRefresh } = useFetch(balanceAddress, {
+          onResponse({request, response, options}) {
+            const appStore = useAppStore()
+            appStore.balance = Number(response._data.amount) / 10**appStore.sdk.config.coinDecimals
+          },
+          watch: [balanceAddress],
+          lazy: true,
+          server: false
+        })
+        const update = computed(() => appStore.notif_event)
+    return { appStore, balanceRefresh }
   },
   data: () => ({
     drawer: true,
@@ -188,14 +204,22 @@ export default {
           title: 'Dashboard',
           to: '/'
         },
-        // {
-        //   icon: 'mdi-inbox-arrow-down',
-        //   title: 'Governance',
-        //   to: '/governance'
-        // }
+        {
+          icon: 'mdi-inbox-arrow-down',
+          title: 'Governance',
+          to: '/governance'
+        }
       ],
   }),
+  computed: {
+    balance() {
+      return this.appStore.balance
+    }
+  },
   methods: {
+    async refresh() {
+        await this.balanceRefresh()
+    },
     truncateString(str,front,back) {
       return `${str.substring(0, front)}...${str.substring(
         str.length - back,
@@ -213,11 +237,22 @@ export default {
           }, 1000);
         }
   },
+  watch: {
+    update(event) {
+      if (event) {
+        this.refresh()
+      }
+    }
+  },
   onUnmounted() {
     clearTimeout(timeOut);
   },
   beforeMount () {
     window.addEventListener("keplr_keystorechange", updateKeplr);
+    useIntervalFn(async () => {
+      console.log("refresh infos")
+        await this.refresh()
+    }, 60000) // call it back every 60s
   },
   beforeDestroy () {
     window.removeEventListener("keplr_keystorechange", updateKeplr);
@@ -228,9 +263,12 @@ export default {
 <style>
 
 .balance_chip{
+  justify-content: space-between;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
   margin-left: 1em; 
   margin-right: 1em;
-  width:12em;
+  min-width:12em;
 }
 .address_chip {
   justify-content: space-between;

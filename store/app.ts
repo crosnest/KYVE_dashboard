@@ -19,6 +19,7 @@ export const useAppStore = defineStore('appStore', {
     // arrow function recommended for full type inference
     state: () => ({
         validatorAddress : '',
+        operatorAddress: '',
         stakerAddress : '',
         restakeBotAddress: '',
         chainId: '' as "kyve-1" | "kaon-1" | "korellia" | "kyve-beta" | "kyve-alpha" | "kyve-local" | undefined,
@@ -357,16 +358,16 @@ export const useAppStore = defineStore('appStore', {
         async gov_vote (propnum:string, voteOption:string) {
           let finalVote:VoteOption
           switch (voteOption) {
-            case 'Yes':
+            case '1':
               finalVote = VoteOption.VOTE_OPTION_YES
               break
-            case 'Abstain':
+            case '2':
               finalVote = VoteOption.VOTE_OPTION_ABSTAIN
               break
-            case 'No':
+            case '3':
               finalVote = VoteOption.VOTE_OPTION_NO
               break
-            case 'NoWithVeto':
+            case '4':
               finalVote = VoteOption.VOTE_OPTION_NO_WITH_VETO
               break
             default:
@@ -400,7 +401,7 @@ export const useAppStore = defineStore('appStore', {
           } catch (error) {
             console.error(error)
           }
-        }
+        },
     }
 })
 

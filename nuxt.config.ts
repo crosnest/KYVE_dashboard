@@ -25,7 +25,8 @@ export default defineNuxtConfig({
   buildModules: [
     // https://go.nuxtjs.dev/vuetify
     '@nuxtjs/vuetify',
-    '@nuxtjs/svg'
+    '@nuxtjs/svg',
+    '@nuxt/content'
   ],  
   build: {
     transpile: ['vuetify'],
