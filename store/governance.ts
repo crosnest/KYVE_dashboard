@@ -1,7 +1,7 @@
 import { defineStore, acceptHMRUpdate} from 'pinia'
 
 import { MyKyveSDK } from "~/signer_util/MyKyveSDK"
-import { createProtobufRpcClient, QueryClient} from "@cosmjs/stargate";
+import { createProtobufRpcClient, ProtobufRpcClient, QueryClient} from "@cosmjs/stargate";
 
 import { Tendermint37Client, HttpClient } from "@cosmjs/stargate/node_modules/@cosmjs/tendermint-rpc"
 import { Proposal } from "@kyvejs/types/client/cosmos/gov/v1/gov"
@@ -18,6 +18,8 @@ export const useGovStore = defineStore('govtore', {
       endedProps: new Map<string, Proposal>(),
       userVotes: new Map<string, String>(),
       valoperVotes: new Map<string, String>(),
+      rpcClient: {} as ProtobufRpcClient,
+      queryTx: {} as tx.ServiceClientImpl,
     }),
     getters: {
         votingPeriodCount(): number {
@@ -81,6 +83,9 @@ export const useGovStore = defineStore('govtore', {
               case '/kyve.pool.v1beta1.MsgUpdatePool':
                 return "Update Pool " + message['id']
                 break;
+              case '/kyve.pool.v1beta1.MsgUpdateParams':
+                return "Update Pools Parameter"
+                break;
               default:
                 return ""
                 break;
@@ -95,7 +100,11 @@ export const useGovStore = defineStore('govtore', {
             const o = JSON.parse(payload);
             const parameterStrings = Object.entries(o).map(([key, value]) => {
               const formattedKey = key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-              return ` - ${formattedKey} = ${value}`;
+              if(isNaN(value)) {
+                return ` - ${formattedKey} = ${value}`;
+              } else {
+                return ` - ${formattedKey} = ${Number(value).toLocaleString()}`;
+              }
             });
             const resultString = `Update parameters:\n${parameterStrings.join('\n')}`;
             return resultString
@@ -118,22 +127,22 @@ export const useGovStore = defineStore('govtore', {
               case '/cosmos.gov.v1beta1.TextProposal':
                 return message.content['description']
                 break;
-              case '/kyve.global.v1beta1.MsgUpdateParams':
-                return format_payload(message['payload'])
-                break;
-              case '/kyve.delegation.v1beta1.MsgUpdateParams':
-                return format_payload(message['payload'])
-                break;
-              case '/kyve.bundles.v1beta1.MsgUpdateParams':
-                return format_payload(message['payload'])
-                break;
-              case '/kyve.stakers.v1beta1.MsgUpdateParams':
-                return format_payload(message['payload'])
-                break;
               case '/kyve.pool.v1beta1.MsgCreatePool':
-                return "Create Pool " + message['name']
+                const formattedString = `create pool ${message.name}\n` +
+                                        `  - config: "${message.config}",\n` +
+                                        `  - start_key: ${message.start_key},\n` +
+                                        `  - upload_interval: ${message.upload_interval} seconds,\n` +
+                                        `  - operating_cost: ${Number(message.operating_cost / 10**6).toLocaleString()} kyve,\n` +
+                                        `  - min_delegation: ${Number(message.min_delegation / 10**6).toLocaleString()} kyve,\n` +
+                                        `  - max_bundle_size: ${message.max_bundle_size} blocks,`;
+                return formattedString
                 break;
+              case '/kyve.global.v1beta1.MsgUpdateParams':
+              case '/kyve.delegation.v1beta1.MsgUpdateParams':
+              case '/kyve.bundles.v1beta1.MsgUpdateParams':
+              case '/kyve.stakers.v1beta1.MsgUpdateParams':
               case '/kyve.pool.v1beta1.MsgUpdatePool':
+              case '/kyve.pool.v1beta1.MsgUpdateParams':
                 return format_payload(message['payload'])
                 break;
               default:
@@ -192,16 +201,18 @@ export const useGovStore = defineStore('govtore', {
           //   coinDecimals: cosmosConfig[0].coinLookup.denomExponent,
           //   gasPrice: 0.02,
           // })
-          const tmclient = await Tendermint37Client.connect(sdk.config.rpc) 
-          const queryClient = new QueryClient(tmclient);
-          const rpcClient = createProtobufRpcClient(queryClient);
-          const queryTx = new tx.ServiceClientImpl(rpcClient);
+          if(!this.rpcClient?.request) {
+            const tmclient = await Tendermint37Client.connect(sdk.config.rpc) 
+            const queryClient = new QueryClient(tmclient);
+            this.rpcClient = createProtobufRpcClient(queryClient);
+            this.queryTx = new tx.ServiceClientImpl(this.rpcClient);
+          }
           const query = tx.GetTxsEventRequest.fromPartial({events: [
             'message.sender=\''+address+'\'',
             //'message.action=\'/cosmos.gov.v1beta1.MsgVote\''
             'message.module=\'governance\''
           ], order_by: 1})
-          const queryResult = await queryTx.GetTxsEvent(query)
+          const queryResult = await this.queryTx.GetTxsEvent(query)
           return queryResult
         }
     }

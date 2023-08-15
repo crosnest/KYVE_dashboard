@@ -98,6 +98,10 @@
             </v-col>
           </v-card >
         </v-container>
+
+        <PoolCard v-for="pool of this.appStore.staker.pools"
+        :key="pool.pool.id"
+        :pool="pool.pool"></PoolCard>
     </div>
 
 </template>
@@ -151,10 +155,10 @@ export default {
           watch: [delegationInfo],
           server: false
         })
-    
+
     const mailtoLink = computed(() => `mailto:${appStore.staker_metadata?.security_contact}`)
     const update = computed(() => appStore.notif_event)
-        
+    
     return { appStore, stakerPending, delegationPending, mailtoLink, delegationRefresh, stakerRefresh}
   },
   data: () => ({
@@ -163,7 +167,7 @@ export default {
     async refresh() {
         await this.delegationRefresh()
         // await this.stakerRefresh()
-    }
+    },
   },
   watch: {
     update(event) {

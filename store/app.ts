@@ -355,7 +355,7 @@ export const useAppStore = defineStore('appStore', {
             console.error(error)
           }
         },
-        async gov_vote (propnum:string, voteOption:string) {
+        async gov_vote (propnum:string, voteOption:string, memo:string) {
           let finalVote:VoteOption
           switch (voteOption) {
             case '1':
@@ -385,14 +385,14 @@ export const useAppStore = defineStore('appStore', {
           const gasEstimation = await this.client.nativeClient.simulate(
             this.walletAddress,
             [voteSend],
-            ''
+            memo
           );
           const usedFee = calculateFee(
               Math.round(gasEstimation * 1.4),
               GasPrice.fromString( this.sdk.config.gasPrice + this.sdk.config.coinDenom )
           );
           try {
-              const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [voteSend], usedFee, '')  
+              const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [voteSend], usedFee, memo)  
               if(result.code !== 0) {
                   console.log(result.rawLog)
               }

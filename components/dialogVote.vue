@@ -29,7 +29,7 @@
         <v-card-text >
           <div v-if="form">
             <v-row>
-              <v-col cols="9" class="d-none d-lg-flex">
+              <v-col cols="9"  class="d-none d-lg-block">
                 <v-textarea
                   v-for="message,index in govStore.endedProps.get(proposal_id)?.messages" 
                   :key="index"
@@ -48,7 +48,14 @@
                       <v-radio label="NO" value="3"></v-radio>
                       <v-radio label="NO with VETO" value="4"></v-radio>
                 </v-radio-group>
-
+                <v-textarea
+                  variant="outlined"
+                  label="note" 
+                  :v-model="memo"
+                  rounded="20%"
+                  auto-grow
+                  :focused=true
+                  />
                 <v-btn 
                   class="text-none ma-4"
                   prepend-icon="mdi-export-variant" 
@@ -124,11 +131,11 @@ export default {
   }),
   methods: {
       async submit() {
-        console.log(this.vote_option, this.proposal_id)
+        console.log(this.vote_option, this.proposal_id, this.memo)
         try {
           this.form = false
           this.wait = true
-          this.cmd_ret = await this.appStore.gov_vote(this.proposal_id, this.vote_option)
+          this.cmd_ret = await this.appStore.gov_vote(this.proposal_id, this.vote_option, this.memo)
           if(this.cmd_ret == undefined) { throw new TypeError("Transaction abort")}
           this.wait = false
           this.resultSuccess = true
