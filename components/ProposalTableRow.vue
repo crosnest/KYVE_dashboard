@@ -2,6 +2,7 @@
     <tr>
         <td>{{ proposal.id }}</td>
         <td>
+            <v-chip v-if="proposal.status === 'PROPOSAL_STATUS_VOTING_PERIOD'" color="gray" class="ma-2" label>VOTING</v-chip>
             <v-chip v-if="proposal.status === 'PROPOSAL_STATUS_PASSED'" color="green" class="ma-2" label>PASSED</v-chip>
             <v-chip v-if="proposal.status === 'PROPOSAL_STATUS_REJECTED'" color="red" class="ma-2" label>REJECTED</v-chip>
             <v-chip v-if="proposal.status === 'PROPOSAL_STATUS_FAILED'" color="orange" class="ma-2" label>FAILED</v-chip>

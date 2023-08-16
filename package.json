@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@cosmjs/stargate": "^0.31.0",
-    "@kyvejs/sdk": "latest",
+    "@kyvejs/sdk": "^1.0.3",
     "@mdi/font": "^7.2.96",
     "@nuxtjs/device": "^3.1.0",
     "@nuxtjs/svg": "^0.4.0",

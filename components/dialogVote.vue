@@ -111,7 +111,7 @@ import { useGovStore } from '@/store/governance'
 
 export default {
   props: {
-        proposal_id: Object, // Prop to pass the individual proposal data
+        proposal_id: String, // Prop to pass the individual proposal data
     },
   setup(props) {
       const appStore = useAppStore()
