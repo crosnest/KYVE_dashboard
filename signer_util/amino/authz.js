@@ -39,7 +39,7 @@ const dateConverter = {
   toAmino(date){
     console.log(date)
     console.log(moment(date))
-    return moment(date).utc().format()
+    return moment.unix(date.seconds).utc().format()
   },
   fromAmino(date){
     return {

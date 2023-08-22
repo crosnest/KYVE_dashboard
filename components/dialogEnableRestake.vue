@@ -88,6 +88,7 @@
 <script>
 import cosmosConfig from '~/chain.config'
 import { useAppStore } from '@/store/app'
+import moment from 'moment'
 
 export default {
   setup() {
@@ -107,17 +108,17 @@ export default {
   methods: {
       async submit() {
         console.log(this.duration, this.action)
-        const time = new Date()
+        const time = moment()
         console.log("current time = ", time.toISOString())
         switch (this.duration) {
           case '1 Week':
-            time.setDate(new Date().getDate() + 7);
+            time.add(1, 'week');
             break;
           case '1 Month':
-            time.setDate(new Date().getDate() + 31);
+            time.add(1, 'month');
             break;
           case '1 Year':
-            time.setDate(new Date().getDate() + 365);
+            time.add(1, 'year');
           break;
         
           default:

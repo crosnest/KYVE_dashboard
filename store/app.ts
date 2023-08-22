@@ -9,9 +9,11 @@ import { QueryStakerRequest, QueryStakerResponse } from "@kyvejs/types/lcd/kyve/
 import { MsgDelegate, MsgUndelegate, MsgWithdrawRewards } from "@kyvejs/types/client/kyve/delegation/v1beta1/tx"
 import { MsgClaimCommissionRewards } from "@kyvejs/types/client/kyve/stakers/v1beta1/tx"
 import { MsgGrant, MsgRevoke } from "@kyvejs/types/client/cosmos/authz/v1beta1/tx"
+import {Timestamp } from  "@kyvejs/types/client/google/protobuf/timestamp"
 import { GenericAuthorization } from "@kyvejs/types/client/cosmos/authz/v1beta1/authz"
 import { MsgVote } from "@kyvejs/types/client/cosmos/gov/v1/tx"
 import { VoteOption } from "@kyvejs/types/client/cosmos/gov/v1/gov"
+import moment, {Moment} from 'moment'
 
 import cosmosConfig from '~/chain.config'
 
@@ -190,7 +192,7 @@ export const useAppStore = defineStore('appStore', {
                   console.error(error)
             }
         },
-        async restake(time:Date, action:string) {
+        async restake(time:Moment, action:string) {
             console.log("KeplrStore Restake for ", time, "with action ", action)
             let delegateReturnMsg = ''
 
@@ -209,7 +211,7 @@ export const useAppStore = defineStore('appStore', {
                 GenericAuthorization.encode(GenericAuthorization.fromPartial({
                   msg: '/kyve.delegation.v1beta1.MsgDelegate'
                 })).finish(),
-                time
+                Timestamp.fromPartial({seconds: time.unix().toString()})
                 )
                 try {
                     console.log(this.walletAddress)
