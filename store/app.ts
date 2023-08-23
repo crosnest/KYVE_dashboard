@@ -1,4 +1,5 @@
 import { defineStore, acceptHMRUpdate} from 'pinia'
+import { useLocalStorage } from "@vueuse/core"
 
 import { calculateFee, GasPrice } from "@kyvejs/sdk/node_modules/@cosmjs/stargate";
 import { MyKyveSDK } from "~/signer_util/MyKyveSDK"
@@ -31,7 +32,7 @@ export const useAppStore = defineStore('appStore', {
         chainId: '' as "kyve-1" | "kaon-1" | "korellia" | "kyve-beta" | "kyve-alpha" | "kyve-local" | undefined,
         sdk: {} as MyKyveSDK,
         client: {} as KyveWebClient,
-        logged: false,
+        logged: useLocalStorage('logged', false),
         IsUnavailable: false,
         isMobile: false,
         chainSelected: 0,
@@ -145,6 +146,9 @@ export const useAppStore = defineStore('appStore', {
               coinDecimals: cosmosConfig[index].coinLookup.denomExponent,
               gasPrice: 0.02,
             })
+          if(this.logged) {
+            await this.keplrConnect()
+          }
         },
         async keplrConnect() {
           this.client = await this.sdk.fromKeplr();
