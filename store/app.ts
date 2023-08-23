@@ -12,6 +12,7 @@ import { Tendermint37Client } from "@cosmjs/tendermint-rpc";
 import { QueryStakerRequest, QueryStakerResponse } from "@kyvejs/types/lcd/kyve/query/v1beta1/stakers"
 import { MsgDelegate as KyveDelegate, MsgUndelegate, MsgWithdrawRewards } from "@kyvejs/types/client/kyve/delegation/v1beta1/tx"
 import { MsgDelegate as CosmosDelegate, MsgUndelegate as CosmosUndelegate} from "cosmjs-types/cosmos/staking/v1beta1/tx"
+import { MsgWithdrawDelegatorReward as CosmosWithdrawDelegatorReward } from "cosmjs-types/cosmos/distribution/v1beta1/tx"
 //import { MsgDelegate as CosmosDelegate} from "@kyvejs/types/client/cosmos/staking/v1beta1/tx"
 import { MsgGrant, MsgRevoke } from "@kyvejs/types/client/cosmos/authz/v1beta1/tx"
 import {Timestamp } from  "@kyvejs/types/client/google/protobuf/timestamp"
@@ -322,12 +323,31 @@ export const useAppStore = defineStore('appStore', {
 
             return result.transactionHash
         },
-        async claim_rewards(commissions:boolean) {
+        async claim_rewards(protocol:boolean, consensus:boolean, commissions:boolean) {
           console.log("KeplrStore claim Commissions")
 
           let Txs = []
           let RewardsReturnMsg = ''
-
+          if (protocol) {
+            const withdrawRewards = {
+              typeUrl: "/kyve.delegation.v1beta1.MsgWithdrawRewards",
+              value: MsgWithdrawRewards.fromPartial({
+                  creator: this.walletAddress,
+                  staker: this.stakerAddress
+                }),
+            }
+            Txs.push(withdrawRewards)
+          }
+          if (consensus) {
+            const withdrawRewards = {
+              typeUrl: "/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward",
+              value: CosmosWithdrawDelegatorReward.fromPartial({
+                delegatorAddress: this.walletAddress,
+                validatorAddress: this.validatorAddress
+                }),
+            }
+            Txs.push(withdrawRewards)
+          }
           if (commissions) {
             const lcdClient = await this.sdk.createLCDClient()
             const staker_resp = await lcdClient.kyve.query.v1beta1.staker(QueryStakerRequest.fromPartial({address: this.stakerAddress}))
@@ -342,14 +362,7 @@ export const useAppStore = defineStore('appStore', {
             console.log(withdrawCommissions)
             Txs.push(withdrawCommissions)
           }
-          const withdrawRewards = {
-            typeUrl: "/kyve.delegation.v1beta1.MsgWithdrawRewards",
-            value: MsgWithdrawRewards.fromPartial({
-                creator: this.walletAddress,
-                staker: this.stakerAddress
-              }),
-          }
-          Txs.push(withdrawRewards)
+          
           
           const gasEstimation = await this.client.nativeClient.simulate(
               this.walletAddress,

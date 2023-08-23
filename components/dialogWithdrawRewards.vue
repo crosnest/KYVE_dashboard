@@ -35,6 +35,20 @@
               <!-- <p>Claimed rewards are free to use</p> -->
               <p></p>
               <v-checkbox 
+                v-model="checkbox_protocol"
+                >
+                <template v-slot:label>
+                  Withdraw Protocol rewards.
+                </template>
+              </v-checkbox>
+              <v-checkbox 
+                v-model="checkbox_consensus"
+                >
+                <template v-slot:label>
+                  Withdraw Consensus rewards.
+                </template>
+              </v-checkbox>
+              <v-checkbox 
                 v-if="appStore.walletAddress == appStore.staker.address"
                 v-model="checkbox_commission"
                 >
@@ -42,6 +56,7 @@
                   Withdraw Commission.
                 </template>
               </v-checkbox>
+              
               <v-btn 
                 class="text-none ma-6"
                 prepend-icon="mdi-export-variant" 
@@ -98,6 +113,8 @@ export default {
       dialog: false,
       amount: 0,
       checkbox_commission: false,
+      checkbox_protocol: false,
+      checkbox_consensus: false,
       form: true,
       wait: false,
       resultSuccess: false,
@@ -108,7 +125,7 @@ export default {
         try {
           this.form = false
           this.wait = true
-          this.cmd_ret = await this.appStore.claim_rewards(this.checkbox_commission)
+          this.cmd_ret = await this.appStore.claim_rewards(this.checkbox_protocol, this.checkbox_consensus, this.checkbox_commission)
           if(this.cmd_ret == undefined) { throw new TypeError("Transaction abort")}
           this.wait = false
           this.resultSuccess = true
