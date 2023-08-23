@@ -1,7 +1,8 @@
 <template>
-    <v-container>
-        <v-card
+        <v-card class="mx-2"
+        elevation="5"
         width="20%"
+        rounded="20"
         :title="pool.name"> 
         <template v-slot:prepend>
             <v-avatar>
@@ -36,7 +37,6 @@
             <div>config: {{ poolData.pool.data.config }}</div> -->
         </v-col>
         </v-card>
-    </v-container>
   </template>
   
   <script>

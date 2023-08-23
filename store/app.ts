@@ -5,9 +5,13 @@ import { MyKyveSDK } from "~/signer_util/MyKyveSDK"
 import { KyveWebClient } from "@kyvejs/sdk"
 
 // import {} from "@kyvejs/types/client/kyve/stakers/v1beta1/tx"
+import { StargateClient, StargateClientOptions, accountFromAny } from "@cosmjs/stargate";
+import { Tendermint37Client } from "@cosmjs/tendermint-rpc";
+
 import { QueryStakerRequest, QueryStakerResponse } from "@kyvejs/types/lcd/kyve/query/v1beta1/stakers"
-import { MsgDelegate, MsgUndelegate, MsgWithdrawRewards } from "@kyvejs/types/client/kyve/delegation/v1beta1/tx"
-import { MsgClaimCommissionRewards } from "@kyvejs/types/client/kyve/stakers/v1beta1/tx"
+import { MsgDelegate as KyveDelegate, MsgUndelegate, MsgWithdrawRewards } from "@kyvejs/types/client/kyve/delegation/v1beta1/tx"
+//import { MsgDelegate as CosmosDelegate} from "cosmjs-types/cosmos/staking/v1beta1/tx"
+import { MsgDelegate as CosmosDelegate} from "@kyvejs/types/client/cosmos/staking/v1beta1/tx"
 import { MsgGrant, MsgRevoke } from "@kyvejs/types/client/cosmos/authz/v1beta1/tx"
 import {Timestamp } from  "@kyvejs/types/client/google/protobuf/timestamp"
 import { GenericAuthorization } from "@kyvejs/types/client/cosmos/authz/v1beta1/authz"
@@ -40,7 +44,8 @@ export const useAppStore = defineStore('appStore', {
         delegatorInfo: {} as delegator_info_t,
 
         notif_event: false,
-        notifText: ''
+        notifText: '',
+        notifKind: ''
 
     }),
     getters: {
@@ -145,24 +150,45 @@ export const useAppStore = defineStore('appStore', {
           this.client = await this.sdk.fromKeplr();
           this.walletAddress = this.client.account.address
           this.walletName = this.client.getWalletName()
+          this.balance = await this.getBalance()
           this.logged = true
+          this.notif_event = true
         },
         getExplorerLink(TxHash:string):string {
           return new URL(TxHash, cosmosConfig[this.chainSelected].explorerUrl).href 
         },
-        async delegate(amount:number, memo:string) {
+        async getBalance():Promise<number> {
+          const account = this.walletAddress
+          const val = await this.client.getKyveBalance()
+          return Number(val) / 10**this.sdk.config.coinDecimals
+        },
+        async delegate(amount:number, valkind, memo:string) {
             const ukyveAmount = amount * 10**this.sdk.config.coinDecimals
+            const {kind, valAddress} = valkind
             let delegateReturnMsg = ''
-
-            const delegate = {
+            let delegate;
+            if (kind === "Protocol") {
+              delegate = {
                 typeUrl: "/kyve.delegation.v1beta1.MsgDelegate",
-                value: MsgDelegate.fromPartial({
+                value: KyveDelegate.fromPartial({
                     creator: this.walletAddress,
                     staker: this.stakerAddress,
                     amount: ukyveAmount.toString(),
                   }),
               }
-            
+            } else if (kind === 'Consensus') {
+              delegate = {
+                typeUrl: "/cosmos.staking.v1beta1.MsgDelegate",
+                value: CosmosDelegate.fromPartial({
+                    delegatorAddress: this.walletAddress,
+                    validatorAddress: this.validatorAddress,
+                    amount: {denom: this.sdk.config.coinDenom,
+                             amount: ukyveAmount.toString()
+                    }
+                  }),
+              }
+            }
+
             const fee = {
                 amount: [
                   {
@@ -185,6 +211,7 @@ export const useAppStore = defineStore('appStore', {
                 const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [delegate], fee, memo)  
                 if(result.code !== 0) {
                     console.log(result.rawLog)
+                    throw new TypeError(result.rawLog)
                 }
                 console.log("Delegate Result", result)
                 return result.transactionHash
@@ -242,11 +269,13 @@ export const useAppStore = defineStore('appStore', {
                     const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [revokeMsg], usedFee, '')
                     if(result.code !== 0) {
                         console.log(result.rawLog)
+                        throw new TypeError(result.rawLog)
                     }
         
-                    return result.transactionHash
+                    return {code: result.code, hash: result.transactionHash}
                 } catch (error) {
                   console.error(error)
+                  throw error
                 }
             }
             
@@ -301,6 +330,7 @@ export const useAppStore = defineStore('appStore', {
                 const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [delegate], fee, memo)  
                 if(result.code !== 0) {
                     console.log(result.rawLog)
+                    throw new TypeError(result.rawLog)
                 }
     
                 return result.transactionHash
@@ -350,6 +380,7 @@ export const useAppStore = defineStore('appStore', {
               const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, Txs, usedFee, '')  
               if(result.code !== 0) {
                   console.log(result.rawLog)
+                  throw new TypeError(result.rawLog)
               }
   
               return result.transactionHash
@@ -397,8 +428,8 @@ export const useAppStore = defineStore('appStore', {
               const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [voteSend], usedFee, memo)  
               if(result.code !== 0) {
                   console.log(result.rawLog)
+                  throw new TypeError(result.rawLog)
               }
-
               return result.transactionHash
           } catch (error) {
             console.error(error)

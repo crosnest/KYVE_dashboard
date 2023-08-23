@@ -132,12 +132,15 @@ export default {
           if(this.cmd_ret == undefined) { throw new TypeError("Transaction abort")}
           this.wait = false
           this.resultSuccess = true
+          this.appStore.notifText = `Transaction Success`
+          this.appStore.notifKind = 'success'
         } catch(error) {
           this.wait = false
           this.resultFailure = true
           this.cmd_ret = error.message;
+          this.appStore.notifText = this.cmd_ret
+          this.appStore.notifKind = 'error'
         }
-        this.appStore.notifText = this.cmd_ret
         this.appStore.notif_event = true
       }
   },

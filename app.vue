@@ -106,13 +106,18 @@
         <NuxtPage />
       </v-container>
       <v-snackbar
+      v-if="appStore.notifText"
       v-model="appStore.notif_event"
+      :color="appStore.notifKind"
       multi-line
+      location="bottom right"
+      rounded="40"
+      z-index="10000"
     >
-      {{ appStore.notifText }}
+      <strong>{{ appStore.notifText }}</strong>
     </v-snackbar>
     </v-main>
-    <v-footer color="pink-lighten-4" class="px-0 py-0" app>
+    <v-footer color="pink-lighten-4" class="px-0 py-0" app elevation="0">
       <div class="bg-pink-lighten-4 d-flex w-100 align-center px-4">
         <strong>Get connected with us on social networks!</strong>
         <v-spacer></v-spacer>
@@ -180,18 +185,8 @@ export default {
     const { isMobile } = useDevice();
     appStore.isMobile = isMobile
 
-    const balanceAddress = computed(() => '/api/balance/' + appStore.walletAddress)
-    const { data: balanceData, pending: balancePending, error: balanceError, refresh: balanceRefresh } = useFetch(balanceAddress, {
-          onResponse({request, response, options}) {
-            const appStore = useAppStore()
-            appStore.balance = Number(response._data.amount) / 10**appStore.sdk.config.coinDecimals
-          },
-          watch: [balanceAddress],
-          lazy: true,
-          server: false
-        })
-        const update = computed(() => appStore.notif_event)
-    return { appStore, balanceRefresh }
+    const update = computed(() => appStore.notif_event)
+    return { appStore }
   },
   data: () => ({
     drawer: true,
@@ -218,7 +213,7 @@ export default {
   },
   methods: {
     async refresh() {
-        await this.balanceRefresh()
+      await this.appStore.getBalance()
     },
     truncateString(str,front,back) {
       return `${str.substring(0, front)}...${str.substring(
@@ -268,7 +263,7 @@ export default {
   padding-right: 0.5rem;
   margin-left: 1em; 
   margin-right: 1em;
-  min-width:12em;
+  min-width:13em;
 }
 .address_chip {
   justify-content: space-between;
