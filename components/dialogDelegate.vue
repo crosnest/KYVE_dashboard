@@ -49,19 +49,23 @@
           </v-text-field>
           
             <v-select
+              v-model="select"
+              :hint="`${select.kind} (${select.address})`"
+              :items="items"
+              item-title="kind"
+              item-value="address"
               label="Select"
-              v-model="validator"
-              :items="[appStore.staker_moniker]"
-              readonly
+              persistent-hint
+              return-object
+              single-line
             ></v-select>
-
-            <v-btn 
+            <v-btn
               class="text-none ma-4"
               prepend-icon="mdi-export-variant" 
               text="Send"
               @click="submit()"
               size="large"
-              :disabled="!amount"  
+              :disabled="amount === 0 || !amount"  
             />
           </div>
           <div v-if="wait" class="ma-8 text-center">
@@ -108,10 +112,15 @@ export default {
       const appStore = useAppStore()
       let cmd_ret = {}
       let dialog = false
+
       return {appStore, cosmosConfig}
   },
   data: () => ({
-      validator: 'Crosnest (kyve199403h5jgfr64r9ewv83zx7q4xphhc4wyv8mhp)',
+      items: [
+        { kind: 'Protocol', address: import.meta.env['VITE_STAKER_ADDRESS'] },
+        { kind: 'Consensus', address: import.meta.env['VITE_VALIDATOR_ADDRESS'] },
+      ],
+      select: { kind: 'Protocol', address: import.meta.env['VITE_STAKER_ADDRESS'] },
       dialog: false,
       amount: null,
       memo: '',
@@ -132,16 +141,20 @@ export default {
         try {
           this.form = false
           this.wait = true
-          this.cmd_ret = await this.appStore.delegate(this.amount, this.memo)
+          this.cmd_ret = await this.appStore.delegate(this.amount, this.select, this.memo)
           if(this.cmd_ret == undefined) { throw new TypeError("Transaction abort")}
           this.wait = false
           this.resultSuccess = true
+          this.appStore.notifText = `Delegation Success`
+          this.appStore.notifKind = 'success'
         } catch(error) {
           this.wait = false
           this.resultFailure = true
           this.cmd_ret = error.message;
+          this.appStore.notifText = this.cmd_ret
+          this.appStore.notifKind = 'error'
         }
-        this.appStore.notifText = this.cmd_ret
+        
         this.appStore.notif_event = true
       }
   },

@@ -31,10 +31,7 @@ export function createPoolStore(storeId: string, pool: staker_pool_t) {
   actions: {
     async getProgress() {
         const pool_status = await this.fetchPoolInfo(this.pool?.id)
-        console.log('pool_key', pool_status?.data?.current_key)
         const current_index = await this.fetchPoolLastBlock(pool_status?.data?.config)
-        console.log('pool_key', pool_status?.data?.current_key)
-        console.log('current_index', current_index)
         return Number(Number(pool_status?.data?.current_key) / Number(current_index))
     },
     async fetchPoolInfo(pool_id:string) {

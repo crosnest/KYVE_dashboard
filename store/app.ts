@@ -1,13 +1,19 @@
 import { defineStore, acceptHMRUpdate} from 'pinia'
+import { useLocalStorage } from "@vueuse/core"
 
 import { calculateFee, GasPrice } from "@kyvejs/sdk/node_modules/@cosmjs/stargate";
 import { MyKyveSDK } from "~/signer_util/MyKyveSDK"
 import { KyveWebClient } from "@kyvejs/sdk"
 
 // import {} from "@kyvejs/types/client/kyve/stakers/v1beta1/tx"
+import { StargateClient, StargateClientOptions, accountFromAny } from "@cosmjs/stargate";
+import { Tendermint37Client } from "@cosmjs/tendermint-rpc";
+
 import { QueryStakerRequest, QueryStakerResponse } from "@kyvejs/types/lcd/kyve/query/v1beta1/stakers"
-import { MsgDelegate, MsgUndelegate, MsgWithdrawRewards } from "@kyvejs/types/client/kyve/delegation/v1beta1/tx"
-import { MsgClaimCommissionRewards } from "@kyvejs/types/client/kyve/stakers/v1beta1/tx"
+import { MsgDelegate as KyveDelegate, MsgUndelegate, MsgWithdrawRewards } from "@kyvejs/types/client/kyve/delegation/v1beta1/tx"
+import { MsgDelegate as CosmosDelegate, MsgUndelegate as CosmosUndelegate} from "cosmjs-types/cosmos/staking/v1beta1/tx"
+import { MsgWithdrawDelegatorReward as CosmosWithdrawDelegatorReward } from "cosmjs-types/cosmos/distribution/v1beta1/tx"
+//import { MsgDelegate as CosmosDelegate} from "@kyvejs/types/client/cosmos/staking/v1beta1/tx"
 import { MsgGrant, MsgRevoke } from "@kyvejs/types/client/cosmos/authz/v1beta1/tx"
 import {Timestamp } from  "@kyvejs/types/client/google/protobuf/timestamp"
 import { GenericAuthorization } from "@kyvejs/types/client/cosmos/authz/v1beta1/authz"
@@ -27,7 +33,7 @@ export const useAppStore = defineStore('appStore', {
         chainId: '' as "kyve-1" | "kaon-1" | "korellia" | "kyve-beta" | "kyve-alpha" | "kyve-local" | undefined,
         sdk: {} as MyKyveSDK,
         client: {} as KyveWebClient,
-        logged: false,
+        logged: useLocalStorage('logged', false),
         IsUnavailable: false,
         isMobile: false,
         chainSelected: 0,
@@ -40,7 +46,8 @@ export const useAppStore = defineStore('appStore', {
         delegatorInfo: {} as delegator_info_t,
 
         notif_event: false,
-        notifText: ''
+        notifText: '',
+        notifKind: ''
 
     }),
     getters: {
@@ -140,38 +147,53 @@ export const useAppStore = defineStore('appStore', {
               coinDecimals: cosmosConfig[index].coinLookup.denomExponent,
               gasPrice: 0.02,
             })
+          if(this.logged) {
+            await this.keplrConnect()
+          }
         },
         async keplrConnect() {
           this.client = await this.sdk.fromKeplr();
           this.walletAddress = this.client.account.address
           this.walletName = this.client.getWalletName()
+          this.balance = await this.getBalance()
           this.logged = true
+          this.notif_event = true
         },
         getExplorerLink(TxHash:string):string {
           return new URL(TxHash, cosmosConfig[this.chainSelected].explorerUrl).href 
         },
-        async delegate(amount:number, memo:string) {
+        async getBalance():Promise<number> {
+          const account = this.walletAddress
+          const val = await this.client.getKyveBalance()
+          return Number(val) / 10**this.sdk.config.coinDecimals
+        },
+        async delegate(amount:number, valkind, memo:string) {
             const ukyveAmount = amount * 10**this.sdk.config.coinDecimals
+            const {kind, valAddress} = valkind
             let delegateReturnMsg = ''
-
-            const delegate = {
+            let delegate;
+            if (kind === "Protocol") {
+              delegate = {
                 typeUrl: "/kyve.delegation.v1beta1.MsgDelegate",
-                value: MsgDelegate.fromPartial({
+                value: KyveDelegate.fromPartial({
                     creator: this.walletAddress,
                     staker: this.stakerAddress,
                     amount: ukyveAmount.toString(),
                   }),
               }
-            
-            const fee = {
-                amount: [
-                  {
-                    denom: "ukyve",
-                    amount: "5000",
-                  },
-                ],
-                gas: "200000",
-              };
+            } else if (kind === 'Consensus') {
+              delegate = {
+                typeUrl: "/cosmos.staking.v1beta1.MsgDelegate",
+                value: CosmosDelegate.fromPartial({
+                    delegatorAddress: this.walletAddress,
+                    validatorAddress: this.validatorAddress,
+                    amount: {denom: this.sdk.config.coinDenom,
+                             amount: ukyveAmount.toString()
+                    }
+                  }),
+              }
+            }
+
             const gasEstimation = await this.client.nativeClient.simulate(
                 this.walletAddress,
                 [delegate],
@@ -181,16 +203,12 @@ export const useAppStore = defineStore('appStore', {
                 Math.round(gasEstimation * 1.4),
                 GasPrice.fromString( 0.025 + this.sdk.config.coinDenom )
             );
-            try {
-                const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [delegate], fee, memo)  
-                if(result.code !== 0) {
-                    console.log(result.rawLog)
-                }
-                console.log("Delegate Result", result)
-                return result.transactionHash
-            } catch (error) {
-                  console.error(error)
+            const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [delegate], usedFee, memo)  
+            if(result.code !== 0) {
+                console.log(result.rawLog)
+                throw new TypeError(result.rawLog)
             }
+            return result.transactionHash
         },
         async restake(time:Moment, action:string) {
             console.log("KeplrStore Restake for ", time, "with action ", action)
@@ -235,19 +253,13 @@ export const useAppStore = defineStore('appStore', {
                         msg_type_url: '/kyve.delegation.v1beta1.MsgDelegate'
                     })
                 }
-                try {
-                    console.log(this.walletAddress)
-                    console.log(revokeMsg)
-                    console.log(usedFee)
-                    const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [revokeMsg], usedFee, '')
-                    if(result.code !== 0) {
-                        console.log(result.rawLog)
-                    }
-        
-                    return result.transactionHash
-                } catch (error) {
-                  console.error(error)
+                const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [revokeMsg], usedFee, '')
+                if(result.code !== 0) {
+                    console.log(result.rawLog)
+                    throw new TypeError(result.rawLog)
                 }
+    
+                return {code: result.code, hash: result.transactionHash}
             }
             
             // const gasEstimation = await this.client.nativeClient.simulate(
@@ -264,12 +276,14 @@ export const useAppStore = defineStore('appStore', {
             // );
             
         },
-        async undelegate(amount:number, memo:string) {
+        async undelegate(amount:number, valkind) {
             console.log("KeplrStore Undelegate ", amount)
+            const {kind, valAddress} = valkind
             const ukyveAmount = amount * 10**this.sdk.config.coinDecimals
             let undelegateReturnMsg = ''
-            
-            const delegate = {
+            let delegate
+            if (kind === "Protocol") {
+            delegate = {
                 typeUrl: "/kyve.delegation.v1beta1.MsgUndelegate",
                 value: MsgUndelegate.fromPartial({
                     creator: this.walletAddress,
@@ -277,43 +291,63 @@ export const useAppStore = defineStore('appStore', {
                     amount: ukyveAmount.toString(),
                   }),
               }
+            } else if (kind === 'Consensus') {
+              delegate = {
+                typeUrl: "/cosmos.staking.v1beta1.MsgUndelegate",
+                value: CosmosUndelegate.fromPartial({
+                    delegatorAddress: this.walletAddress,
+                    validatorAddress: this.validatorAddress,
+                    amount: {denom: this.sdk.config.coinDenom,
+                             amount: ukyveAmount.toString()
+                    }
+                  }),
+              }
+            }
             console.log(delegate)
             
-            const fee = {
-                amount: [
-                  {
-                    denom: "ukyve",
-                    amount: "5000",
-                  },
-                ],
-                gas: "200000",
-              };
             const gasEstimation = await this.client.nativeClient.simulate(
                 this.walletAddress,
                 [delegate],
-                memo
+                ''
             );
             const usedFee = calculateFee(
                 Math.round(gasEstimation * 1.4),
                 GasPrice.fromString( 0.025 + this.sdk.config.coinDenom )
             );
-            try {
-                const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [delegate], fee, memo)  
-                if(result.code !== 0) {
-                    console.log(result.rawLog)
-                }
-    
-                return result.transactionHash
-            } catch (error) {
-              console.error(error)
+            const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [delegate], usedFee, '')  
+            if(result.code !== 0) {
+                console.log(result.rawLog)
+                throw new TypeError(result.rawLog)
+                return result
             }
+
+            return result.transactionHash
         },
-        async claim_rewards(commissions:boolean) {
+        async claim_rewards(protocol:boolean, consensus:boolean, commissions:boolean) {
           console.log("KeplrStore claim Commissions")
 
           let Txs = []
           let RewardsReturnMsg = ''
-
+          if (protocol) {
+            const withdrawRewards = {
+              typeUrl: "/kyve.delegation.v1beta1.MsgWithdrawRewards",
+              value: MsgWithdrawRewards.fromPartial({
+                  creator: this.walletAddress,
+                  staker: this.stakerAddress
+                }),
+            }
+            Txs.push(withdrawRewards)
+          }
+          if (consensus) {
+            const withdrawRewards = {
+              typeUrl: "/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward",
+              value: CosmosWithdrawDelegatorReward.fromPartial({
+                delegatorAddress: this.walletAddress,
+                validatorAddress: this.validatorAddress
+                }),
+            }
+            Txs.push(withdrawRewards)
+          }
           if (commissions) {
             const lcdClient = await this.sdk.createLCDClient()
             const staker_resp = await lcdClient.kyve.query.v1beta1.staker(QueryStakerRequest.fromPartial({address: this.stakerAddress}))
@@ -328,14 +362,7 @@ export const useAppStore = defineStore('appStore', {
             console.log(withdrawCommissions)
             Txs.push(withdrawCommissions)
           }
-          const withdrawRewards = {
-            typeUrl: "/kyve.delegation.v1beta1.MsgWithdrawRewards",
-            value: MsgWithdrawRewards.fromPartial({
-                creator: this.walletAddress,
-                staker: this.stakerAddress
-              }),
-          }
-          Txs.push(withdrawRewards)
+          
           
           const gasEstimation = await this.client.nativeClient.simulate(
               this.walletAddress,
@@ -346,16 +373,14 @@ export const useAppStore = defineStore('appStore', {
               Math.round(gasEstimation * 1.4),
               GasPrice.fromString( this.sdk.config.gasPrice + this.sdk.config.coinDenom )
           );
-          try {
-              const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, Txs, usedFee, '')  
-              if(result.code !== 0) {
-                  console.log(result.rawLog)
-              }
-  
-              return result.transactionHash
-          } catch (error) {
-            console.error(error)
+          const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, Txs, usedFee, '')  
+          if(result.code !== 0) {
+              console.log(result.rawLog)
+              throw new TypeError(result.rawLog)
           }
+
+          return result.transactionHash
+      
         },
         async gov_vote (propnum:string, voteOption:string, memo:string) {
           let finalVote:VoteOption
@@ -393,16 +418,13 @@ export const useAppStore = defineStore('appStore', {
               Math.round(gasEstimation * 1.4),
               GasPrice.fromString( this.sdk.config.gasPrice + this.sdk.config.coinDenom )
           );
-          try {
-              const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [voteSend], usedFee, memo)  
-              if(result.code !== 0) {
-                  console.log(result.rawLog)
-              }
-
-              return result.transactionHash
-          } catch (error) {
-            console.error(error)
+          const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [voteSend], usedFee, memo)  
+          if(result.code !== 0) {
+              console.log(result.rawLog)
+              throw new TypeError(result.rawLog)
           }
+          return result.transactionHash
+      
         },
     }
 })

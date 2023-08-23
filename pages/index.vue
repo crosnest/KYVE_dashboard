@@ -1,8 +1,8 @@
 <template>
     <div>
-        <v-container >
+        <v-container>
           <!-- 1st line of widgets -->
-          <v-card style="padding: 1em">
+          <v-card style="padding: 1em" elevation="5">
             <v-col class="col-12 col-md-9 q-ml-lg-lg">
               <v-row class="row items-center">
                 <v-avatar style="align-: center;" image="https://s3.amazonaws.com/keybase_processed_uploads/4e8a6ee78ed698828e6c2baec569d305_360_360.jpg" size="200"/>
@@ -67,41 +67,38 @@
                   </v-row>
                   </v-col>
                   <v-divider 
-                  style="margin-top: 1em;margin-bottom: 1em;"
+                  class="my-5"
                   />
-                  <v-row>
+                  <v-row class="px-3">
                     <v-col class="col-6 col-sm-3 text-subtitle2">
-                      <strong>Total delegation</strong>
-                      <p>{{ appStore.staker_total_deleg }} $KYVE</p>
-                      <p>{{ appStore.dollar_total_deleg }} $usd</p>
-                    </v-col>
-                    <!-- <v-col class="col-6 col-sm-3 text-subtitle2">
-                      <strong>Self Delegation</strong>
-                      <p>{{ appStore.staker_self_deleg }} $KYVE</p>
-                    </v-col> -->
-                    <v-col class="col-6 col-sm-3 text-subtitle2">
-                      <strong>My Delegation</strong>
-                      <p>{{ appStore.staker_my_deleg }} $KYVE</p>
-                      <p>{{ appStore.dollar_my_deleg }} $usd</p>
+                      <v-row><strong>Total delegation</strong></v-row>
+                      <v-row><v-icon icon="mdi-alpha-k"/>{{ appStore.staker_total_deleg }}</v-row>
+                      <v-row><v-icon icon="mdi-currency-usd" size="small"/>{{ appStore.dollar_total_deleg }}</v-row>
                     </v-col>
                     <v-col class="col-6 col-sm-3 text-subtitle2">
-                      <strong>My Rewards</strong>
-                      <p>{{ appStore.staker_my_rewards }} $KYVE</p>
-                      <p>{{ appStore.dollar_my_rewards }} $usd</p>
+                      <v-row><strong>My Delegation</strong></v-row>
+                      <v-row><v-icon icon="mdi-alpha-k"/>{{ appStore.staker_my_deleg }}</v-row>
+                      <v-row><v-icon icon="mdi-currency-usd" size="small"/>{{ appStore.dollar_my_deleg }}</v-row>
                     </v-col>
                     <v-col class="col-6 col-sm-3 text-subtitle2">
-                      <strong>Delegation APY</strong>
-                      <p>{{ appStore.staker_deleg_apy }} %</p>
+                      <v-row><strong>My Rewards</strong></v-row>
+                      <v-row><v-icon icon="mdi-alpha-k"/>{{ appStore.staker_my_rewards }}</v-row>
+                      <v-row><v-icon icon="mdi-currency-usd" size="small"/>{{ appStore.dollar_my_rewards }}</v-row>
+                    </v-col>
+                    <v-col class="col-6 col-sm-3 text-subtitle2">
+                      <v-row><strong>Delegation APY</strong></v-row>
+                      <v-row>{{ appStore.staker_deleg_apy }} %</v-row>
                     </v-col>
                   </v-row>
               </v-row>
             </v-col>
           </v-card >
         </v-container>
-
-        <PoolCard v-for="pool of this.appStore.staker.pools"
-        :key="pool.pool.id"
-        :pool="pool.pool"></PoolCard>
+        <v-row align-content="space-between" class="my-3">
+          <PoolCard v-for="pool of this.appStore.staker.pools"
+          :key="pool.pool.id"
+          :pool="pool.pool"/>
+        </v-row>
     </div>
 
 </template>
