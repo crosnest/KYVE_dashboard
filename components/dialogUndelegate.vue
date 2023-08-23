@@ -36,11 +36,22 @@
               <p>You will receive NO rewards during unbonding period</p>
               <p></p>
               <v-text-field
-                    v-model="amount"
-                    label="Amount*"
-                    required
-                    suffix="$KYVE"
-                  ></v-text-field>
+                v-model="amount"
+                label="Amount*"
+                required
+                suffix="$KYVE"
+              ></v-text-field>
+              <v-select
+                v-model="select"
+                :hint="`${select.kind} (${select.address})`"
+                :items="items"
+                item-title="kind"
+                item-value="address"
+                label="Select"
+                persistent-hint
+                return-object
+                single-line
+              ></v-select>
               <v-checkbox 
                 v-model="checkbox" 
                 >
@@ -102,6 +113,11 @@ export default {
       return {appStore, cosmosConfig}
   },
   data: () => ({
+      items: [
+        { kind: 'Protocol', address: import.meta.env['VITE_STAKER_ADDRESS'] },
+        { kind: 'Consensus', address: import.meta.env['VITE_VALIDATOR_ADDRESS'] },
+      ],
+      select: { kind: 'Protocol', address: import.meta.env['VITE_STAKER_ADDRESS'] },
       dialog: false,
       amount: 0,
       checkbox: false,
@@ -115,7 +131,7 @@ export default {
         try {
           this.form = false
           this.wait = true
-          this.cmd_ret = await this.appStore.undelegate(this.amount)
+          this.cmd_ret = await this.appStore.undelegate(this.amount, this.select)
           if(this.cmd_ret == undefined) { throw new TypeError("Transaction abort")}
           this.wait = false
           this.resultSuccess = true

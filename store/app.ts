@@ -11,8 +11,8 @@ import { Tendermint37Client } from "@cosmjs/tendermint-rpc";
 
 import { QueryStakerRequest, QueryStakerResponse } from "@kyvejs/types/lcd/kyve/query/v1beta1/stakers"
 import { MsgDelegate as KyveDelegate, MsgUndelegate, MsgWithdrawRewards } from "@kyvejs/types/client/kyve/delegation/v1beta1/tx"
-//import { MsgDelegate as CosmosDelegate} from "cosmjs-types/cosmos/staking/v1beta1/tx"
-import { MsgDelegate as CosmosDelegate} from "@kyvejs/types/client/cosmos/staking/v1beta1/tx"
+import { MsgDelegate as CosmosDelegate, MsgUndelegate as CosmosUndelegate} from "cosmjs-types/cosmos/staking/v1beta1/tx"
+//import { MsgDelegate as CosmosDelegate} from "@kyvejs/types/client/cosmos/staking/v1beta1/tx"
 import { MsgGrant, MsgRevoke } from "@kyvejs/types/client/cosmos/authz/v1beta1/tx"
 import {Timestamp } from  "@kyvejs/types/client/google/protobuf/timestamp"
 import { GenericAuthorization } from "@kyvejs/types/client/cosmos/authz/v1beta1/authz"
@@ -193,15 +193,6 @@ export const useAppStore = defineStore('appStore', {
               }
             }
 
-            const fee = {
-                amount: [
-                  {
-                    denom: "ukyve",
-                    amount: "5000",
-                  },
-                ],
-                gas: "200000",
-              };
             const gasEstimation = await this.client.nativeClient.simulate(
                 this.walletAddress,
                 [delegate],
@@ -211,17 +202,12 @@ export const useAppStore = defineStore('appStore', {
                 Math.round(gasEstimation * 1.4),
                 GasPrice.fromString( 0.025 + this.sdk.config.coinDenom )
             );
-            try {
-                const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [delegate], fee, memo)  
-                if(result.code !== 0) {
-                    console.log(result.rawLog)
-                    throw new TypeError(result.rawLog)
-                }
-                console.log("Delegate Result", result)
-                return result.transactionHash
-            } catch (error) {
-                  console.error(error)
+            const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [delegate], usedFee, memo)  
+            if(result.code !== 0) {
+                console.log(result.rawLog)
+                throw new TypeError(result.rawLog)
             }
+            return result.transactionHash
         },
         async restake(time:Moment, action:string) {
             console.log("KeplrStore Restake for ", time, "with action ", action)
@@ -266,21 +252,13 @@ export const useAppStore = defineStore('appStore', {
                         msg_type_url: '/kyve.delegation.v1beta1.MsgDelegate'
                     })
                 }
-                try {
-                    console.log(this.walletAddress)
-                    console.log(revokeMsg)
-                    console.log(usedFee)
-                    const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [revokeMsg], usedFee, '')
-                    if(result.code !== 0) {
-                        console.log(result.rawLog)
-                        throw new TypeError(result.rawLog)
-                    }
-        
-                    return {code: result.code, hash: result.transactionHash}
-                } catch (error) {
-                  console.error(error)
-                  throw error
+                const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [revokeMsg], usedFee, '')
+                if(result.code !== 0) {
+                    console.log(result.rawLog)
+                    throw new TypeError(result.rawLog)
                 }
+    
+                return {code: result.code, hash: result.transactionHash}
             }
             
             // const gasEstimation = await this.client.nativeClient.simulate(
@@ -297,12 +275,14 @@ export const useAppStore = defineStore('appStore', {
             // );
             
         },
-        async undelegate(amount:number, memo:string) {
+        async undelegate(amount:number, valkind) {
             console.log("KeplrStore Undelegate ", amount)
+            const {kind, valAddress} = valkind
             const ukyveAmount = amount * 10**this.sdk.config.coinDecimals
             let undelegateReturnMsg = ''
-            
-            const delegate = {
+            let delegate
+            if (kind === "Protocol") {
+            delegate = {
                 typeUrl: "/kyve.delegation.v1beta1.MsgUndelegate",
                 value: MsgUndelegate.fromPartial({
                     creator: this.walletAddress,
@@ -310,37 +290,37 @@ export const useAppStore = defineStore('appStore', {
                     amount: ukyveAmount.toString(),
                   }),
               }
+            } else if (kind === 'Consensus') {
+              delegate = {
+                typeUrl: "/cosmos.staking.v1beta1.MsgUndelegate",
+                value: CosmosUndelegate.fromPartial({
+                    delegatorAddress: this.walletAddress,
+                    validatorAddress: this.validatorAddress,
+                    amount: {denom: this.sdk.config.coinDenom,
+                             amount: ukyveAmount.toString()
+                    }
+                  }),
+              }
+            }
             console.log(delegate)
             
-            const fee = {
-                amount: [
-                  {
-                    denom: "ukyve",
-                    amount: "5000",
-                  },
-                ],
-                gas: "200000",
-              };
             const gasEstimation = await this.client.nativeClient.simulate(
                 this.walletAddress,
                 [delegate],
-                memo
+                ''
             );
             const usedFee = calculateFee(
                 Math.round(gasEstimation * 1.4),
                 GasPrice.fromString( 0.025 + this.sdk.config.coinDenom )
             );
-            try {
-                const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [delegate], fee, memo)  
-                if(result.code !== 0) {
-                    console.log(result.rawLog)
-                    throw new TypeError(result.rawLog)
-                }
-    
-                return result.transactionHash
-            } catch (error) {
-              console.error(error)
+            const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [delegate], usedFee, '')  
+            if(result.code !== 0) {
+                console.log(result.rawLog)
+                throw new TypeError(result.rawLog)
+                return result
             }
+
+            return result.transactionHash
         },
         async claim_rewards(commissions:boolean) {
           console.log("KeplrStore claim Commissions")
@@ -380,17 +360,14 @@ export const useAppStore = defineStore('appStore', {
               Math.round(gasEstimation * 1.4),
               GasPrice.fromString( this.sdk.config.gasPrice + this.sdk.config.coinDenom )
           );
-          try {
-              const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, Txs, usedFee, '')  
-              if(result.code !== 0) {
-                  console.log(result.rawLog)
-                  throw new TypeError(result.rawLog)
-              }
-  
-              return result.transactionHash
-          } catch (error) {
-            console.error(error)
+          const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, Txs, usedFee, '')  
+          if(result.code !== 0) {
+              console.log(result.rawLog)
+              throw new TypeError(result.rawLog)
           }
+
+          return result.transactionHash
+      
         },
         async gov_vote (propnum:string, voteOption:string, memo:string) {
           let finalVote:VoteOption
@@ -428,16 +405,13 @@ export const useAppStore = defineStore('appStore', {
               Math.round(gasEstimation * 1.4),
               GasPrice.fromString( this.sdk.config.gasPrice + this.sdk.config.coinDenom )
           );
-          try {
-              const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [voteSend], usedFee, memo)  
-              if(result.code !== 0) {
-                  console.log(result.rawLog)
-                  throw new TypeError(result.rawLog)
-              }
-              return result.transactionHash
-          } catch (error) {
-            console.error(error)
+          const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [voteSend], usedFee, memo)  
+          if(result.code !== 0) {
+              console.log(result.rawLog)
+              throw new TypeError(result.rawLog)
           }
+          return result.transactionHash
+      
         },
     }
 })
