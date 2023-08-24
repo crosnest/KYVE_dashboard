@@ -178,7 +178,7 @@ export default {
     appStore.chainId = import.meta.env['VITE_CHAIN_ID']
     appStore.stakerAddress = import.meta.env['VITE_STAKER_ADDRESS']
     appStore.validatorAddress = import.meta.env['VITE_VALIDATOR_ADDRESS']
-    appStore.operatorAddress = import.meta.env['VITE_OPERATO_ADDRESS']
+    appStore.operatorAddress = import.meta.env['VITE_OPERATOR_ADDRESS']
     appStore.restakeBotAddress = import.meta.env['VITE_RESTAKE_BOT']
 
     appStore.init_store()
