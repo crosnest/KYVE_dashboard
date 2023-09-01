@@ -305,13 +305,13 @@ export const useAppStore = defineStore('appStore', {
                         }
           const AuthzGranteeResult = await queryAuthz.Grants(query);
           tmclient.disconnect()
-          if (AuthzGranteeResult.grants){
-            if (AuthzGranteeResult.grants) {
+          try {
+            if (AuthzGranteeResult.grants[0]) {
               return 'Revoke'
             } else {
               return 'Grant'
             }
-          } else {
+          } catch (error) {
             return  'Grant'
           }
         },
