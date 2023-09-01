@@ -292,20 +292,20 @@ export const useAppStore = defineStore('appStore', {
             
         },
         async get_grants() {
-          const tmclient = await Tendermint37Client.connect(this.sdk.config.rpc) 
-          const queryClient = new QueryClient(tmclient);
-          const rpcClient = createProtobufRpcClient(queryClient);
-          
-          const queryAuthz = new authz.QueryClientImpl(rpcClient);
-
-          // get list of grantee
-          const query = { granter: this.walletAddress,
-                          grantee: this.restakeBotAddress,
-                          msgTypeUrl: '/kyve.delegation.v1beta1.MsgDelegate' 
-                        }
-          const AuthzGranteeResult = await queryAuthz.Grants(query);
-          tmclient.disconnect()
           try {
+            const tmclient = await Tendermint37Client.connect(this.sdk.config.rpc) 
+            const queryClient = new QueryClient(tmclient);
+            const rpcClient = createProtobufRpcClient(queryClient);
+            
+            const queryAuthz = new authz.QueryClientImpl(rpcClient);
+
+            // get list of grantee
+            const query = { granter: this.walletAddress,
+                            grantee: this.restakeBotAddress,
+                            msgTypeUrl: '/kyve.delegation.v1beta1.MsgDelegate' 
+                          }
+            const AuthzGranteeResult = await queryAuthz.Grants(query);
+            tmclient.disconnect()
             if (AuthzGranteeResult.grants[0]) {
               return 'Revoke'
             } else {
