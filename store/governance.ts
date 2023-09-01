@@ -9,7 +9,6 @@ import { KyveSDK } from '@kyvejs/sdk/dist/sdk';
 import * as tx from "@kyvejs/types/client/cosmos/tx/v1beta1/service";
 import { TxResponse, Attribute } from "@kyvejs/types/client/cosmos/base/abci/v1beta1/abci";
 
-import cosmosConfig from '~/chain.config'
 export const useGovStore = defineStore('govtore', {
     // arrow function recommended for full type inference
     state: () => ({
