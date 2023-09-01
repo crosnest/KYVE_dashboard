@@ -24,7 +24,8 @@
             </template>
             
             <template v-slot:append>
-              <v-btn icon="mdi-close" @click="dialog=false"></v-btn>
+              <v-btn class="mx-1" icon="mdi-help-circle-outline" @click="dialog_help=true"></v-btn>
+              <v-btn class="mx-1" icon="mdi-close" @click="dialog=false"></v-btn>
             </template> 
         <v-card-text >
           <div v-if="form">
@@ -100,6 +101,56 @@
 
         </v-card-text>
       </v-card>
+      <v-dialog
+        v-model="dialog_help"
+        width="40%"
+      >
+      <template v-slot:activator="{ props }">
+          <v-btn prepend-icon="mdi-cash-plus"
+            variant="tonal"
+            density="default"
+            size="large"
+            block rounded="lg"
+            :disabled="!this.appStore.islogged"
+            v-bind="props">
+            Help
+          </v-btn>
+        </template>
+
+          <v-card title="Help"> 
+              <template v-slot:prepend>
+                <v-avatar>
+                    <v-img
+                      max-width="32"
+                      max-height="32"
+                      :src="cosmosConfig[appStore.chainSelected].coinLookup.icon"
+                    ></v-img>
+                  </v-avatar>
+              </template>
+              
+              <template v-slot:append>
+                <v-btn icon="mdi-close" @click="dialog_help=false"></v-btn>
+              </template> 
+            <v-card-text >
+              <v-list-item
+                v-for="(item, i) in help_topics"
+                :key="i"
+                router
+                exact
+              >
+              <v-textarea
+                class="my-2"
+                variant="underlined"
+                :label=item.title 
+                :model-value=item.text
+                rounded="20%"
+                auto-grow
+                readonly
+                />
+              </v-list-item>
+            </v-card-text>
+          </v-card>
+      </v-dialog>
     </v-dialog>
 </template>
 
@@ -120,6 +171,19 @@ export default {
       return {appStore, govStore, proposal_id, cosmosConfig}
   },
   data: () => ({
+      help_topics: [
+        {
+          icon: '',
+          title: 'Consensus validator',
+          text: 'KYVE has two layers to its blockchain, the consensus layer, and the protocol layer. The consensus layer is the backbone of KYVE, relying on validators to secure the chain in Delegated Proof of Stake.'
+        },
+        {
+          icon: '',
+          title: 'Protocol validator',
+          text: 'KYVE has two layers to its blockchain, the consensus layer, and the protocol layer. The protocol layer is technically KYVE’s data lake. This layer relies on validators called protocol validators. Protocol validators work as both uploaders and validators, and therefore are responsible for fetching data from a data source, validating the data, and storing it.'
+        }
+      ],
+      dialog_help: false,
       readonly: true,
       dialog: false,
       vote_option: undefined,

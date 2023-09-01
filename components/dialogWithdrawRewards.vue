@@ -26,7 +26,8 @@
             </template>
             
             <template v-slot:append>
-              <v-btn icon="mdi-close" @click="dialog=false"></v-btn>
+              <v-btn class="mx-1" icon="mdi-help-circle-outline" @click="dialog_help=true"></v-btn>
+              <v-btn class="mx-1" icon="mdi-close" @click="dialog=false"></v-btn>
             </template>
 
           <v-card-text>     
@@ -97,6 +98,50 @@
 
           </v-card-text>
         </v-card>
+        <v-dialog
+        v-model="dialog_help"
+        width="40%"
+      >
+      <template v-slot:activator="{ props }">
+          <v-btn prepend-icon="mdi-cash-plus"
+            variant="tonal"
+            density="default"
+            size="large"
+            block rounded="lg"
+            :disabled="!this.appStore.islogged"
+            v-bind="props">
+            Help
+          </v-btn>
+        </template>
+
+          <v-card title="Help"> 
+              <template v-slot:prepend>
+                <v-avatar>
+                    <v-img
+                      max-width="32"
+                      max-height="32"
+                      :src="cosmosConfig[appStore.chainSelected].coinLookup.icon"
+                    ></v-img>
+                  </v-avatar>
+              </template>
+              
+              <template v-slot:append>
+                <v-btn icon="mdi-close" @click="dialog_help=false"></v-btn>
+              </template> 
+            <v-card-text >
+              <v-list-item
+                v-for="(item, i) in help_topics"
+                :key="i"
+                :prepend-icon="item.icon"
+                :title="item.title"
+                :subtitle="item.text"
+                router
+                exact
+              >
+              </v-list-item>
+            </v-card-text>
+          </v-card>
+      </v-dialog>
       </v-dialog> 
 </template>
 
@@ -110,6 +155,14 @@ export default {
       return {appStore, cosmosConfig}
   },
   data: () => ({
+      help_topics: [
+        {
+          icon: '',
+          title: 'Withdraw rewards',
+          text: 'Withdraw rewards from delegation to Crosnest. The claimed rewards are immediatly available.'
+        },
+      ],
+      dialog_help: false,
       dialog: false,
       amount: 0,
       checkbox_commission: false,

@@ -6,7 +6,7 @@ import { Tendermint37Client, HttpClient } from "@cosmjs/stargate/node_modules/@c
 import KyveSDK from '@kyvejs/sdk';
 import { KyveLCDClientType } from "@kyvejs/sdk/dist/clients/lcd-client/client"
 import * as pool from "@kyvejs/types/lcd/kyve/pool/v1beta1/pool"
-
+import * as pools from "@kyvejs/types/lcd/kyve/query/v1beta1/pools"
 // export factory function 
 export function createPoolStore(storeId: string, pool: staker_pool_t) {
   console.log("createPoolStore: ", storeId);
@@ -15,7 +15,8 @@ export function createPoolStore(storeId: string, pool: staker_pool_t) {
   // arrow function recommended for full type inference
   state: () => ({
     pool: pool,
-    sdk: new KyveSDK('kyve-1'),
+    pool_details: {} as pools.PoolResponse,
+    sdk: new KyveSDK(import.meta.env['VITE_CHAIN_ID']),
     rpcClient: {} as ProtobufRpcClient,
     lcdClient: {} as KyveLCDClientType,
   }),
@@ -27,19 +28,34 @@ export function createPoolStore(storeId: string, pool: staker_pool_t) {
       const arweaveImageUrl = `https://arweave.net/${transactionId}`;
       return arweaveImageUrl
     },
+    validatorcount(): number {
+      if(this.pool_details.stakers) {
+        return this.pool_details.stakers.length
+      } else {
+        return 0
+      }
+    },
+    total_bundles(): number {
+      if (this.pool_details?.data?.total_bundles) {
+        return Number(this.pool_details.data.total_bundles)
+      } else {
+        return 0
+      }
+    },
   },
   actions: {
     async getProgress() {
         const pool_status = await this.fetchPoolInfo(this.pool?.id)
         const current_index = await this.fetchPoolLastBlock(pool_status?.data?.config)
-        return Number(Number(pool_status?.data?.current_key) / Number(current_index))
+        return Math.min(Number(Number(pool_status?.data?.current_key) / Number(current_index)), 1)
     },
     async fetchPoolInfo(pool_id:string) {
       if(!this.lcdClient?.kyve) {
         this.lcdClient = this.sdk.createLCDClient()
       }
-      const queryResult = await this.lcdClient.kyve.query.v1beta1.pool({id: pool_id})
-      return queryResult.pool
+      const result = await this.lcdClient.kyve.query.v1beta1.pool({id: pool_id})
+      this.pool_details = pools.PoolResponse.fromJSON(result.pool)
+      return result.pool
     },
     async fetchPoolLastBlock(config:string) {
       const config_obj = JSON.parse(config)
@@ -50,6 +66,9 @@ export function createPoolStore(storeId: string, pool: staker_pool_t) {
           break;
         case 'osmosis-1':
           rpc = 'https://rpc.cros-nest.com/osmosis'
+          break;
+        case 'archway-1':
+          rpc = 'https://rpc.cros-nest.com/archway'
           break;
         default:
           break;

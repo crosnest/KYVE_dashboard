@@ -81,14 +81,19 @@
                       <v-row><v-icon icon="mdi-currency-usd" size="small"/>{{ appStore.dollar_my_deleg }}</v-row>
                     </v-col>
                     <v-col class="col-6 col-sm-3 text-subtitle2">
-                      <v-row><strong>My Rewards</strong></v-row>
+                      <v-row><strong>My Protocol Rewards</strong></v-row>
                       <v-row><v-icon icon="mdi-alpha-k"/>{{ appStore.staker_my_rewards }}</v-row>
                       <v-row><v-icon icon="mdi-currency-usd" size="small"/>{{ appStore.dollar_my_rewards }}</v-row>
                     </v-col>
                     <v-col class="col-6 col-sm-3 text-subtitle2">
+                      <v-row><strong>My Consensus Rewards</strong></v-row>
+                      <v-row><v-icon icon="mdi-alpha-k"/>{{ appStore.consensus_my_rewards }}</v-row>
+                      <v-row><v-icon icon="mdi-currency-usd" size="small"/>{{ appStore.dollar_consensus_rewards }}</v-row>
+                    </v-col>
+                    <!-- <v-col class="col-6 col-sm-3 text-subtitle2">
                       <v-row><strong>Delegation APY</strong></v-row>
                       <v-row>{{ appStore.staker_deleg_apy }} %</v-row>
-                    </v-col>
+                    </v-col> -->
                   </v-row>
               </v-row>
             </v-col>
@@ -115,6 +120,7 @@ export default {
   },
   setup() {
     const appStore = useAppStore()
+    const update = computed(() => appStore.notif_event)
 
     const priceQuery = "https://api.coingecko.com/api/v3/simple/price?ids=kyve-network&vs_currencies=usd&precision=4"
     const { data: priceData, pending: pricePending, error: priceError, refresh: priceRefresh } = useFetch(priceQuery, {
@@ -123,7 +129,7 @@ export default {
             console.log("PRICE == ", response._data)
             appStore.price = Number(response._data["kyve-network"].usd)
           },
-          watch: []
+          watch: [update]
         })
 
 
@@ -149,14 +155,27 @@ export default {
             const appStore = useAppStore()
             appStore.delegatorInfo = response._data.delegator
           },
-          watch: [delegationInfo],
+          watch: [delegationInfo, update],
+          server: false
+        })
+    const delegationConsInfo = computed(() => {
+      if (appStore.islogged) {
+        return appStore.sdk.config.rest + '/cosmos/distribution/v1beta1/delegators/' + appStore.walletAddress + '/rewards/' + appStore.validatorAddress
+      }
+      else {return ''}
+    })
+    const { data: delegationConsData, pending: delegationConsPending, error: delegationConsError, refresh: delegationConsRefresh } = useFetch(delegationConsInfo, {
+          onResponse({request, response, options}) {
+            const appStore = useAppStore()
+            appStore.consensus_rewards = response._data.rewards
+          },
+          watch: [delegationConsInfo, update],
           server: false
         })
 
     const mailtoLink = computed(() => `mailto:${appStore.staker_metadata?.security_contact}`)
-    const update = computed(() => appStore.notif_event)
-    
-    return { appStore, stakerPending, delegationPending, mailtoLink, delegationRefresh, stakerRefresh}
+   
+    return { appStore, stakerPending, delegationPending, delegationConsPending, mailtoLink, delegationRefresh, delegationConsRefresh, stakerRefresh}
   },
   data: () => ({
   }),

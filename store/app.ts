@@ -5,12 +5,10 @@ import { calculateFee, GasPrice } from "@kyvejs/sdk/node_modules/@cosmjs/stargat
 import { MyKyveSDK } from "~/signer_util/MyKyveSDK"
 import { KyveWebClient } from "@kyvejs/sdk"
 
-// import {} from "@kyvejs/types/client/kyve/stakers/v1beta1/tx"
-import { StargateClient, StargateClientOptions, accountFromAny } from "@cosmjs/stargate";
-import { Tendermint37Client } from "@cosmjs/tendermint-rpc";
-
 import { QueryStakerRequest, QueryStakerResponse } from "@kyvejs/types/lcd/kyve/query/v1beta1/stakers"
-import { MsgDelegate as KyveDelegate, MsgUndelegate, MsgWithdrawRewards } from "@kyvejs/types/client/kyve/delegation/v1beta1/tx"
+import { MsgDelegate as KyveDelegate, MsgRedelegate, MsgUndelegate, MsgWithdrawRewards } from "@kyvejs/types/client/kyve/delegation/v1beta1/tx"
+import { ValidatorOutstandingRewards } from '@kyvejs/types/client/cosmos/distribution/v1beta1/distribution'
+import { DecCoin } from '@kyvejs/types/client/cosmos/base/v1beta1/coin'
 import { MsgDelegate as CosmosDelegate, MsgUndelegate as CosmosUndelegate} from "cosmjs-types/cosmos/staking/v1beta1/tx"
 import { MsgWithdrawDelegatorReward as CosmosWithdrawDelegatorReward } from "cosmjs-types/cosmos/distribution/v1beta1/tx"
 import { MsgClaimCommissionRewards } from "@kyvejs/types/client/kyve/stakers/v1beta1/tx"
@@ -45,6 +43,7 @@ export const useAppStore = defineStore('appStore', {
         price: 0,
         staker: {} as staker_t,
         delegatorInfo: {} as delegator_info_t,
+        consensus_rewards: [] as DecCoin[],
 
         notif_event: false,
         notifText: '',
@@ -112,6 +111,17 @@ export const useAppStore = defineStore('appStore', {
         dollar_my_rewards():string {
           if (this.delegatorInfo?.current_reward === undefined) return '0'
           const price_value = this.price * Number(Number(this.delegatorInfo?.current_reward)/10**this.sdk.config.coinDecimals) 
+          return price_value.toLocaleString()
+        },
+        consensus_my_rewards():string {
+          if (this.consensus_rewards === undefined) return '0'
+          const reward = this.consensus_rewards.find(type => type.denom === this.sdk.config.coinDenom)
+          return Number(Number(reward?.amount)/10**this.sdk.config.coinDecimals).toLocaleString()
+        },
+        dollar_consensus_rewards():string {
+          if (this.delegatorInfo?.current_reward === undefined) return '0'
+          const reward = this.consensus_rewards.find(type => type.denom === this.sdk.config.coinDenom)
+          const price_value = this.price * Number(Number(reward?.amount)/10**this.sdk.config.coinDecimals)
           return price_value.toLocaleString()
         },
         menu_items():any {

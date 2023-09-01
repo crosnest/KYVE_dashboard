@@ -25,10 +25,10 @@
             >
                 {{ progress.toFixed(1) }} %
             </v-progress-linear>
-            <div>validators: {{  }}</div>
+            <div>validators: {{ poolStore.validatorcount }}</div>
             <div>Total pool Delegation: {{ total_delegation }}</div>
             <div>Total fund in the pool: {{ pool.total_funds / 10**appStore.sdk.config.coinDecimals}}</div>
-            <div>Archived bundle count: {{  }}</div>
+            <div>Archived bundle count: {{ total_bundles }}</div>
             <!-- <div>is active: {{ pool.is_leaving ? 'no' : 'yes'}}</div> -->
             <!-- <div>bundle interval: {{ pool.upload_interval }}seconds</div> -->
             <!-- <div>start Key: {{ poolData.pool.data.start_key }}</div>
@@ -42,7 +42,6 @@
   <script>
   import { useAppStore } from '@/store/app'
   import { createPoolStore } from '@/store/pool'
-import { useThrottledRefHistory } from '@vueuse/core';
   export default {
     props: {
       pool: Object, // Prop to pass the messages data
@@ -67,6 +66,10 @@ import { useThrottledRefHistory } from '@vueuse/core';
         },
         total_fund() {
             const v = this.pool.total_fund / 10**this.appStore.sdk.config.coinDecimals
+            return v.toLocaleString()
+        },
+        total_bundles() {
+            const v = this.poolStore.total_bundles
             return v.toLocaleString()
         },
     },
