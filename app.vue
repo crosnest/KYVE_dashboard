@@ -214,7 +214,7 @@ export default {
   methods: {
     async refresh() {
       await this.appStore.getBalance()
-      this.appStore.grantAction = await this.get_grants()
+      this.appStore.grantAction = await this.appStore.get_grants()
     },
     truncateString(str,front,back) {
       return `${str.substring(0, front)}...${str.substring(
