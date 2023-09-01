@@ -24,6 +24,9 @@
                       <dialogDelegate />
                     </v-col>
                     <v-col class="col-2 items-center">
+                      <DialogRedelegate />
+                    </v-col>
+                    <v-col class="col-2 items-center">
                       <dialogEnableRestake />
                     </v-col>
                     <v-col class="col-2 items-center">

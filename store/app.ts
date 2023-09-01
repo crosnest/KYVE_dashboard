@@ -221,6 +221,36 @@ export const useAppStore = defineStore('appStore', {
             }
             return result.transactionHash
         },
+        async redelegate(amount:number, from:string, to:string) {
+          const ukyveAmount = amount * 10**this.sdk.config.coinDecimals
+          let delegateReturnMsg = ''
+          let redelegate;
+          redelegate = {
+            typeUrl: "/kyve.delegation.v1beta1.MsgRedelegate",
+            value: MsgRedelegate.fromPartial({
+                creator: this.walletAddress,
+                from_staker: from,
+                to_staker: to,
+                amount: ukyveAmount.toString(),
+              }),
+          }
+          
+          const gasEstimation = await this.client.nativeClient.simulate(
+              this.walletAddress,
+              [redelegate],
+              ''
+          );
+          const usedFee = calculateFee(
+              Math.round(gasEstimation * 1.4),
+              GasPrice.fromString( 0.025 + this.sdk.config.coinDenom )
+          );
+          const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [redelegate], usedFee, '')  
+          if(result.code !== 0) {
+              console.log(result.rawLog)
+              throw new TypeError(result.rawLog)
+          }
+          return result.transactionHash
+        },
         async restake(time:Moment, action:string) {
             console.log("KeplrStore Restake for ", time, "with action ", action)
             let delegateReturnMsg = ''
