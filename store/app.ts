@@ -170,7 +170,6 @@ export const useAppStore = defineStore('appStore', {
           this.walletAddress = this.client.account.address
           this.walletName = this.client.getWalletName()
           this.balance = await this.getBalance()
-          this.grantAction = await this.get_grants()
           this.logged = true
           this.notif_event = true
         },
