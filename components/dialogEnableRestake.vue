@@ -11,10 +11,11 @@
           block rounded="lg"
           :disabled="appStore.staker_my_deleg == '0'"
           v-bind="props">
-          Enable Restake
+          <div v-if="appStore.grantAction === 'Grant'">Enable Restake</div>
+          <div v-else >Disable restake</div>
         </v-btn>
       </template>
-        <v-card title="Grant & Revoke"> 
+        <v-card :title="appStore.grantAction"> 
             <template v-slot:prepend>
               <v-avatar>
                   <v-img
@@ -31,19 +32,21 @@
             </template>
           <v-card-text>     
             <div v-if="form">
-              <p>Select the action</p>
+              <p>Action to execute</p>
               <v-select
                 label="Select"
-                v-model="action"
+                v-model="appStore.grantAction"
                 :items="['Grant', 'Revoke']"
                 readonly
               ></v-select>
-              <p>Set the period of the grant</p>
-              <v-select
-                label="Select"
-                v-model="duration"
-                :items="['1 Week', '1 Month', '1 Year']"
-              ></v-select>
+              <div v-if="appStore.grantAction === 'Grant'">
+                <p>Set the period of the grant</p>
+                <v-select
+                  label="Select"
+                  v-model="duration"
+                  :items="['1 Week', '1 Month', '1 Year']"
+                ></v-select>
+              </div>
               <v-btn 
                 class="text-none ma-4"
                 prepend-icon="mdi-export-variant" 
@@ -159,7 +162,6 @@ export default {
       dialog_help: false,
       dialog: false,
       duration: '1 Year',
-      action: 'Grant',
       memo: '',
       form: true,
       wait: false,
@@ -168,7 +170,7 @@ export default {
   }),
   methods: {
       async submit() {
-        console.log(this.duration, this.action)
+        console.log(this.duration, appStore.grantAction)
         const time = moment()
         console.log("current time = ", time.toISOString())
         switch (this.duration) {
@@ -189,7 +191,7 @@ export default {
         try {
           this.form = false
           this.wait = true  
-          this.cmd_ret = await this.appStore.restake(time, this.action)
+          this.cmd_ret = await this.appStore.restake(time, appStore.grantAction)
           if(this.cmd_ret == undefined) { throw new TypeError("Transaction abort")}
           this.wait = false
           this.resultSuccess = true
@@ -211,7 +213,6 @@ export default {
         // Here you would put something to happen when dialog opens up
         // reset dialog state
         this.duration = '1 Year',
-        this.action = 'Grant',
         this.form = true,
         this.wait = false,
         this.resultSuccess = false,

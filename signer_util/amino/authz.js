@@ -86,15 +86,15 @@ export function createAuthzAminoConverters() {
     },
     "/cosmos.authz.v1beta1.MsgRevoke": {
       aminoType: "cosmos-sdk/MsgRevoke",
-      toAmino: ({ granter, grantee, msg_type_url }) => ({
+      toAmino: ({ granter, grantee, msgTypeUrl }) => ({
         granter,
         grantee,
-        msg_type_url
+        msg_type_url: msgTypeUrl
       }),
       fromAmino: ({ granter, grantee, msg_type_url }) => ({
         granter,
         grantee,
-        msg_type_url
+        msgTypeUrl: msg_type_url
       }),
     },
   };
