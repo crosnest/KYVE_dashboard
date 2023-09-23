@@ -5,17 +5,20 @@ import { calculateFee, GasPrice } from "@kyvejs/sdk/node_modules/@cosmjs/stargat
 import { MyKyveSDK } from "~/signer_util/MyKyveSDK"
 import { KyveWebClient } from "@kyvejs/sdk"
 
-import { QueryStakerRequest, QueryStakerResponse } from "@kyvejs/types/lcd/kyve/query/v1beta1/stakers"
-import { MsgDelegate as KyveDelegate, MsgRedelegate, MsgUndelegate, MsgWithdrawRewards } from "@kyvejs/types/client/kyve/delegation/v1beta1/tx"
-import { ValidatorOutstandingRewards } from '@kyvejs/types/client/cosmos/distribution/v1beta1/distribution'
+import { createProtobufRpcClient, QueryClient} from "@cosmjs/stargate";
+import { Tendermint37Client } from "@cosmjs/stargate/node_modules/@cosmjs/tendermint-rpc"
+
+import { QueryStakerRequest } from "@kyvejs/types/lcd/kyve/query/v1beta1/stakers"
+import { MsgDelegate as KyveDelegate, MsgUndelegate, MsgWithdrawRewards } from "@kyvejs/types/client/kyve/delegation/v1beta1/tx"
 import { DecCoin } from '@kyvejs/types/client/cosmos/base/v1beta1/coin'
 import { MsgDelegate as CosmosDelegate, MsgUndelegate as CosmosUndelegate} from "cosmjs-types/cosmos/staking/v1beta1/tx"
 import { MsgWithdrawDelegatorReward as CosmosWithdrawDelegatorReward } from "cosmjs-types/cosmos/distribution/v1beta1/tx"
 import { MsgClaimCommissionRewards } from "@kyvejs/types/client/kyve/stakers/v1beta1/tx"
 //import { MsgDelegate as CosmosDelegate} from "@kyvejs/types/client/cosmos/staking/v1beta1/tx"
-import { MsgGrant, MsgRevoke } from "@kyvejs/types/client/cosmos/authz/v1beta1/tx"
+import { MsgGrant, MsgRevoke } from "cosmjs-types/cosmos/authz/v1beta1/tx"
 import {Timestamp } from  "@kyvejs/types/client/google/protobuf/timestamp"
 import { GenericAuthorization } from "@kyvejs/types/client/cosmos/authz/v1beta1/authz"
+import * as authz from "cosmjs-types/cosmos/authz/v1beta1/query";
 import { MsgVote } from "@kyvejs/types/client/cosmos/gov/v1/tx"
 import { VoteOption } from "@kyvejs/types/client/cosmos/gov/v1/gov"
 import moment, {Moment} from 'moment'
@@ -44,7 +47,7 @@ export const useAppStore = defineStore('appStore', {
         staker: {} as staker_t,
         delegatorInfo: {} as delegator_info_t,
         consensus_rewards: [] as DecCoin[],
-
+        grantAction: 'Grant',
         notif_event: false,
         notifText: '',
         notifKind: ''
@@ -261,7 +264,7 @@ export const useAppStore = defineStore('appStore', {
                     value: MsgRevoke.fromPartial({
                         granter: this.walletAddress,
                         grantee: this.restakeBotAddress,
-                        msg_type_url: '/kyve.delegation.v1beta1.MsgDelegate'
+                        msgTypeUrl: '/kyve.delegation.v1beta1.MsgDelegate'
                     })
                 }
                 const result = await this.client.nativeClient.signAndBroadcast(this.walletAddress, [revokeMsg], usedFee, '')
@@ -286,6 +289,30 @@ export const useAppStore = defineStore('appStore', {
             //     )
             // );
             
+        },
+        async get_grants() {
+          try {
+            const tmclient = await Tendermint37Client.connect(this.sdk.config.rpc) 
+            const queryClient = new QueryClient(tmclient);
+            const rpcClient = createProtobufRpcClient(queryClient);
+            
+            const queryAuthz = new authz.QueryClientImpl(rpcClient);
+
+            // get list of grantee
+            const query = { granter: this.walletAddress,
+                            grantee: this.restakeBotAddress,
+                            msgTypeUrl: '/kyve.delegation.v1beta1.MsgDelegate' 
+                          }
+            const AuthzGranteeResult = await queryAuthz.Grants(query);
+            tmclient.disconnect()
+            if (AuthzGranteeResult.grants[0]) {
+              return 'Revoke'
+            } else {
+              return 'Grant'
+            }
+          } catch (error) {
+            return  'Grant'
+          }
         },
         async undelegate(amount:number, valkind) {
             console.log("KeplrStore Undelegate ", amount)

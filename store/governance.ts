@@ -9,7 +9,6 @@ import { KyveSDK } from '@kyvejs/sdk/dist/sdk';
 import * as tx from "@kyvejs/types/client/cosmos/tx/v1beta1/service";
 import { TxResponse, Attribute } from "@kyvejs/types/client/cosmos/base/abci/v1beta1/abci";
 
-import cosmosConfig from '~/chain.config'
 export const useGovStore = defineStore('govtore', {
     // arrow function recommended for full type inference
     state: () => ({
@@ -201,8 +200,9 @@ export const useGovStore = defineStore('govtore', {
           //   coinDecimals: cosmosConfig[0].coinLookup.denomExponent,
           //   gasPrice: 0.02,
           // })
+          let tmclient;
           if(!this.rpcClient?.request) {
-            const tmclient = await Tendermint37Client.connect(sdk.config.rpc) 
+            tmclient = await Tendermint37Client.connect(sdk.config.rpc) 
             const queryClient = new QueryClient(tmclient);
             this.rpcClient = createProtobufRpcClient(queryClient);
             this.queryTx = new tx.ServiceClientImpl(this.rpcClient);
@@ -213,6 +213,7 @@ export const useGovStore = defineStore('govtore', {
             'message.module=\'governance\''
           ], order_by: 1})
           const queryResult = await this.queryTx.GetTxsEvent(query)
+          tmclient?.disconnect()
           return queryResult
         }
     }
