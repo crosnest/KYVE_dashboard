@@ -96,7 +96,7 @@
             density="default"
             size="large"
             block rounded="lg"
-            :disabled="!this.appStore.islogged"
+            :disabled="!appStore.islogged"
             v-bind="props">
             Help
           </v-btn>
@@ -191,7 +191,7 @@ export default {
         try {
           this.form = false
           this.wait = true  
-          this.cmd_ret = await this.appStore.restake(time, appStore.grantAction)
+          this.cmd_ret = await this.appStore.restake(time, this.appStore.grantAction)
           if(this.cmd_ret == undefined) { throw new TypeError("Transaction abort")}
           this.wait = false
           this.resultSuccess = true
