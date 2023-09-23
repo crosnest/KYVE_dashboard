@@ -170,7 +170,7 @@ export default {
   }),
   methods: {
       async submit() {
-        console.log(this.duration, appStore.grantAction)
+        console.log(this.duration, this.appStore.grantAction)
         const time = moment()
         console.log("current time = ", time.toISOString())
         switch (this.duration) {
