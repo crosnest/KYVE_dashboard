@@ -8,6 +8,7 @@ import { Proposal } from "@kyvejs/types/client/cosmos/gov/v1/gov"
 import { KyveSDK } from '@kyvejs/sdk/dist/sdk';
 import * as tx from "@kyvejs/types/client/cosmos/tx/v1beta1/service";
 import { TxResponse, Attribute } from "@kyvejs/types/client/cosmos/base/abci/v1beta1/abci";
+import moment from 'moment'
 
 export const useGovStore = defineStore('govtore', {
     // arrow function recommended for full type inference
@@ -85,6 +86,8 @@ export const useGovStore = defineStore('govtore', {
               case '/kyve.pool.v1beta1.MsgUpdateParams':
                 return "Update Pools Parameter"
                 break;
+              case '/kyve.pool.v1beta1.MsgScheduleRuntimeUpgrade':
+                return "Upgrade pool runtime to version " + message['version']
               default:
                 return ""
                 break;
@@ -144,6 +147,11 @@ export const useGovStore = defineStore('govtore', {
               case '/kyve.pool.v1beta1.MsgUpdateParams':
                 return format_payload(message['payload'])
                 break;
+              case '/kyve.pool.v1beta1.MsgScheduleRuntimeUpgrade':
+                return `Upgrade pool runtime\n` +
+                       ` - runtime: ${message.runtime}\n` +
+                       ` - version: ${message.version}\n` +
+                       ` - time: ${moment.unix(message.scheduled_at).format("MM/DD/YYYY")}`
               default:
                 return ""
                 break;

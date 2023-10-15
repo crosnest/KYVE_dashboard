@@ -70,6 +70,9 @@ export function createPoolStore(storeId: string, pool: staker_pool_t) {
         case 'archway-1':
           rpc = 'https://rpc.cros-nest.com/archway'
           break;
+        case 'axelar-dojo-1':
+          rpc = 'https://rpc.cros-nest.com/axelar'
+          break;
         default:
           break;
       }
