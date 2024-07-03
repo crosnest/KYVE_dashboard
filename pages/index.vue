@@ -110,14 +110,10 @@
 
 <script>
 import { useAppStore } from '@/store/app'
-import { VSkeletonLoader } from 'vuetify/labs/VSkeletonLoader'
 import { useIntervalFn } from '@vueuse/core'
 
 export default {
   name: 'DefaultLayout',
-  components: {
-    VSkeletonLoader
-  },
   setup() {
     const appStore = useAppStore()
     const update = computed(() => appStore.notif_event)
