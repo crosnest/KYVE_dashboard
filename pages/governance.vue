@@ -133,16 +133,10 @@
 </template>
 
 <script>
-import { VSkeletonLoader } from 'vuetify/labs/VSkeletonLoader'
-import { VDataTable } from 'vuetify/labs/VDataTable'
 import { useAppStore } from '@/store/app'
 import { useGovStore } from '@/store/governance'
 
 export default {
-  components: {
-    VSkeletonLoader,
-    VDataTable
-  },
   setup() {
    const appStore = useAppStore()
    const govStore = useGovStore()
