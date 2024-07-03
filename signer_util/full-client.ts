@@ -1,6 +1,6 @@
 import { OfflineAminoSigner } from "@cosmjs/amino/build/signer";
 import { OfflineSigner, Registry } from "@cosmjs/proto-signing";
-import { AminoTypes, GasPrice, SigningStargateClient } from "@kyvejs/sdk/node_modules/@cosmjs/stargate";
+import { AminoTypes, GasPrice, SigningStargateClient } from "@cosmjs/stargate";
 
 import { IConfig } from "@kyvejs/sdk/dist/constants";
 import * as KyveRegistryTx from "@kyvejs/sdk/dist/registry/tx.registry";
@@ -15,9 +15,9 @@ import {
   createGovV1AminoConverters,
 } from "@kyvejs/sdk/dist/amino";
 import {
-  createAuthzAminoConverters, 
-  createAuthzExecAminoConverters
-} from '~/signer_util/amino/authz'
+  createAuthzAminoConverters,
+  createAuthzExecAminoConverters,
+} from "~/signer_util/amino/authz";
 import { createDefaultAminoConverters } from "@cosmjs/stargate";
 
 export async function getSigningKyveClient(
@@ -56,8 +56,8 @@ export async function getSigningKyveClient(
         ...createStakersAminoConverters(),
         ...createDelegationAminoConverters(),
         ...createBundlesAminoConverters(),
-        ...createAuthzAminoConverters(), 
-        ...createAuthzExecAminoConverters()
+        ...createAuthzAminoConverters(),
+        ...createAuthzExecAminoConverters(),
       }),
     });
 

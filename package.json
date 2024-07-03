@@ -21,7 +21,9 @@
   },
   "dependencies": {
     "@cosmjs/stargate": "^0.32.4",
+    "@cosmjs/tendermint-rpc": "^0.32.4",
     "@kyvejs/sdk": "^1.1.1",
+    "@kyvejs/types": "1.0.0",
     "@mdi/font": "^7.4.47",
     "@nuxtjs/device": "^3.1.1",
     "@nuxtjs/svg": "^0.4.1",

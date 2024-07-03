@@ -1,7 +1,7 @@
 import { defineStore, acceptHMRUpdate } from "pinia";
 
 import { ProtobufRpcClient, QueryClient } from "@cosmjs/stargate";
-import { Tendermint37Client } from "@cosmjs/stargate/node_modules/@cosmjs/tendermint-rpc";
+import { Tendermint37Client } from "@cosmjs/tendermint-rpc";
 
 import KyveSDK from "@kyvejs/sdk";
 import { KyveLCDClientType } from "@kyvejs/sdk/dist/clients/lcd-client/client";
